@@ -124,12 +124,12 @@ jobs:
         echo "$DUMP"
         echo "────────────────────────────────"
 
-        # Extract key fields with proper trimming
-        PKG=$(echo "$DUMP"    | grep "^package:"     | grep -oP "name='[^']+'" | cut -d"'" -f2 | tr -d '\r\n' | xargs)
-        VNAME=$(echo "$DUMP"  | grep "^package:"     | grep -oP "versionName='[^']+'" | cut -d"'" -f2 | tr -d '\r\n' | xargs)
-        MINSDK=$(echo "$DUMP" | grep "^sdkVersion:" | grep -oP "'[0-9]+'" | tr -d "'\r\n" | xargs)
-        TGTSDK=$(echo "$DUMP" | grep "^targetSdkVersion:" | grep -oP "'[0-9]+'" | tr -d "'\r\n" | xargs)
-        ACTIVITY=$(echo "$DUMP" | grep "launchable-activity" | grep -oP "name='[^']+'" | cut -d"'" -f2 | tr -d '\r\n' | xargs)
+        # Extract key fields with more precise regex patterns
+        PKG=$(echo "$DUMP" | grep "^package:" | sed -n "s/.*name='\([^']*\)'.*/\1/p" | tr -d '\r\n' | xargs)
+        VNAME=$(echo "$DUMP" | grep "^package:" | sed -n "s/.*versionName='\([^']*\)'.*/\1/p" | tr -d '\r\n' | xargs)
+        MINSDK=$(echo "$DUMP" | grep "^sdkVersion:" | sed -n "s/.*'\([0-9]*\)'.*/\1/p" | tr -d '\r\n' | xargs)
+        TGTSDK=$(echo "$DUMP" | grep "^targetSdkVersion:" | sed -n "s/.*'\([0-9]*\)'.*/\1/p" | tr -d '\r\n' | xargs)
+        ACTIVITY=$(echo "$DUMP" | grep "launchable-activity" | sed -n "s/.*name='\([^']*\)'.*/\1/p" | tr -d '\r\n' | xargs)
 
         # Debug output
         echo "Extracted values:"
