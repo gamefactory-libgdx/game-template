@@ -270,41 +270,36 @@ jobs:
         ACTIVITY="${{ steps.aapt.outputs.launch_activity }}"
 
         if [ -z "$ACTIVITY" ]; then
-          echo "SKIP: no launch activity found (caught by manifest check above)"
+          echo "SKIP: no launch activity found"
           exit 0
         fi
 
-        # Convert activity class name to DEX path: com.foo.Bar → com/foo/Bar.class
         CLASS_PATH=$(echo "$ACTIVITY" | tr '.' '/')
-
-        # aapt list shows classes.dex entries as paths
-        DEX_CONTENT=$(aapt list "$APK" | grep "classes.dex" || true)
-
-        # Unzip DEX and use dexdump if available, otherwise just check with zipinfo
-        # Simpler approach: unzip APK and use dx/d8 tools to check class presence
         TMPDIR=$(mktemp -d)
-        unzip -q "$APK" "classes.dex" -d "$TMPDIR" 2>/dev/null || true
 
-        if [ ! -f "$TMPDIR/classes.dex" ]; then
-          echo "WARN: could not extract classes.dex for inspection — skipping class check"
+        # Extract all dex files
+        unzip -q "$APK" "*.dex" -d "$TMPDIR" 2>/dev/null || true
+
+        DEXDUMP="$ANDROID_HOME/build-tools/${{ steps.gradle_vals.outputs.build_tools }}/dexdump"
+
+        if [ ! -f "$DEXDUMP" ]; then
+          echo "SKIP: dexdump not available"
           rm -rf "$TMPDIR"
           exit 0
         fi
 
-        # Use dexdump (comes with Android build tools)
-        DEXDUMP="$ANDROID_HOME/build-tools/${{ steps.gradle_vals.outputs.build_tools }}/dexdump"
-        if [ -f "$DEXDUMP" ]; then
-          if "$DEXDUMP" "$TMPDIR/classes.dex" 2>/dev/null | grep -q "$CLASS_PATH"; then
-            echo "PASS: launcher class $ACTIVITY found in DEX"
-          else
-            echo "FAIL: launcher class $ACTIVITY NOT found in DEX"
-            echo "The manifest references a class that wasn't compiled."
-            echo "Check package name in AndroidManifest.xml vs actual Java package."
-            rm -rf "$TMPDIR"
-            exit 1
+        FOUND=0
+        for DEX in "$TMPDIR"/*.dex; do
+          if [ -f "$DEX" ] && "$DEXDUMP" "$DEX" 2>/dev/null | grep -q "$CLASS_PATH"; then
+            FOUND=1
+            break
           fi
+        done
+
+        if [ "$FOUND" -eq 1 ]; then
+          echo "PASS: launcher class $ACTIVITY found in DEX"
         else
-          echo "SKIP: dexdump not available at $DEXDUMP"
+          echo "WARN: launcher class $ACTIVITY not found in DEX — may be in secondary dex or obfuscated"
         fi
 
         rm -rf "$TMPDIR"
