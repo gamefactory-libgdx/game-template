@@ -124,18 +124,36 @@ jobs:
         echo "$DUMP"
         echo "────────────────────────────────"
 
-        # Extract key fields
-        PKG=$(echo "$DUMP"    | grep "^package:"     | grep -oP "name='[^']+'" | cut -d"'" -f2)
-        VNAME=$(echo "$DUMP"  | grep "^package:"     | grep -oP "versionName='[^']+'" | cut -d"'" -f2)
-        MINSDK=$(echo "$DUMP" | grep "^sdkVersion:" | grep -oP "'[0-9]+'" | tr -d "'")
-        TGTSDK=$(echo "$DUMP" | grep "^targetSdkVersion:" | grep -oP "'[0-9]+'" | tr -d "'")
-        ACTIVITY=$(echo "$DUMP" | grep "launchable-activity" | grep -oP "name='[^']+'" | cut -d"'" -f2)
+        # Extract key fields with proper trimming
+        PKG=$(echo "$DUMP"    | grep "^package:"     | grep -oP "name='[^']+'" | cut -d"'" -f2 | tr -d '\r\n' | xargs)
+        VNAME=$(echo "$DUMP"  | grep "^package:"     | grep -oP "versionName='[^']+'" | cut -d"'" -f2 | tr -d '\r\n' | xargs)
+        MINSDK=$(echo "$DUMP" | grep "^sdkVersion:" | grep -oP "'[0-9]+'" | tr -d "'\r\n" | xargs)
+        TGTSDK=$(echo "$DUMP" | grep "^targetSdkVersion:" | grep -oP "'[0-9]+'" | tr -d "'\r\n" | xargs)
+        ACTIVITY=$(echo "$DUMP" | grep "launchable-activity" | grep -oP "name='[^']+'" | cut -d"'" -f2 | tr -d '\r\n' | xargs)
 
-        echo "package_name=$PKG"       >> $GITHUB_OUTPUT
-        echo "version_name=$VNAME"     >> $GITHUB_OUTPUT
-        echo "min_sdk=$MINSDK"         >> $GITHUB_OUTPUT
-        echo "target_sdk=$TGTSDK"      >> $GITHUB_OUTPUT
-        echo "launch_activity=$ACTIVITY" >> $GITHUB_OUTPUT
+        # Debug output
+        echo "Extracted values:"
+        echo "  PKG='$PKG' (${#PKG} chars)"
+        echo "  VNAME='$VNAME'"
+        echo "  MINSDK='$MINSDK'"
+        echo "  TGTSDK='$TGTSDK'"
+        echo "  ACTIVITY='$ACTIVITY'"
+
+        # Sanitize outputs for GitHub Actions (no special chars, newlines, etc)
+        PKG_CLEAN=$(echo "$PKG" | tr -cd '[:alnum:].')
+        VNAME_CLEAN=$(echo "$VNAME" | tr -cd '[:alnum:].')
+        MINSDK_CLEAN=$(echo "$MINSDK" | tr -cd '[:digit:]')
+        TGTSDK_CLEAN=$(echo "$TGTSDK" | tr -cd '[:digit:]')
+        ACTIVITY_CLEAN=$(echo "$ACTIVITY" | tr -cd '[:alnum:].')
+
+        # Write to GitHub outputs with sanitized values
+        {
+          echo "package_name=$PKG_CLEAN"
+          echo "version_name=$VNAME_CLEAN"
+          echo "min_sdk=$MINSDK_CLEAN"
+          echo "target_sdk=$TGTSDK_CLEAN"  
+          echo "launch_activity=$ACTIVITY_CLEAN"
+        } >> $GITHUB_OUTPUT
 
         # ── Assertions ──────────────────────────────────────────────────────
 
@@ -148,8 +166,8 @@ jobs:
 
         # 2. Package must follow reverse-domain convention (at least 2 segments)
         SEG_COUNT=$(echo "$PKG" | awk -F'.' '{print NF}')
-        if [ "$SEG_COUNT" -lt 2 ]; then
-          echo "FAIL: package name '$PKG' has fewer than 2 segments"
+        if [ -z "$SEG_COUNT" ] || [ "$SEG_COUNT" -lt 2 ]; then
+          echo "FAIL: package name '$PKG' has fewer than 2 segments (got $SEG_COUNT)"
           exit 1
         fi
         echo "PASS: package name format OK ($SEG_COUNT segments)"
@@ -169,7 +187,7 @@ jobs:
         echo "PASS: minSdkVersion = $MINSDK"
 
         # 5. minSdkVersion sanity range: must be >= 21 (Android 5.0)
-        if [ "$MINSDK" -lt 21 ]; then
+        if [ -z "$MINSDK" ] || [ "$MINSDK" -lt 21 ]; then
           echo "FAIL: minSdkVersion $MINSDK is below 21 — too old for modern devices"
           exit 1
         fi
@@ -183,7 +201,7 @@ jobs:
         echo "PASS: targetSdkVersion = $TGTSDK"
 
         # 7. targetSdk must be >= minSdk (sanity check)
-        if [ "$TGTSDK" -lt "$MINSDK" ]; then
+        if [ -z "$TGTSDK" ] || [ -z "$MINSDK" ] || [ "$TGTSDK" -lt "$MINSDK" ]; then
           echo "FAIL: targetSdkVersion $TGTSDK < minSdkVersion $MINSDK"
           exit 1
         fi
