@@ -1,0 +1,381 @@
+name: Android Build & Smoke Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs on the same branch to save minutes
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: '17'
+  # ANDROID_API_LEVEL and ANDROID_BUILD_TOOLS are NOT hardcoded here.
+  # They are extracted directly from android/build.gradle at runtime.
+  # See the "Extract build.gradle values" step below.
+
+jobs:
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # JOB 1 — BUILD
+  # Compiles the project and produces a debug APK
+  # ────────────────────────────────────────────────────────────────────────────
+  build:
+    name: Build Debug APK
+    runs-on: ubuntu-latest
+
+    outputs:
+      apk_path: ${{ steps.find_apk.outputs.apk_path }}
+      package_name: ${{ steps.aapt.outputs.package_name }}
+      version_name: ${{ steps.aapt.outputs.version_name }}
+      min_sdk: ${{ steps.aapt.outputs.min_sdk }}
+
+    steps:
+      # ── Checkout ────────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Java ────────────────────────────────────────────────────────────────
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      # ── Extract versions from build.gradle ─────────────────────────────────
+      # Reads compileSdk and buildToolsVersion directly from android/build.gradle.
+      # This way the CI is always in sync — no manual variable maintenance.
+      - name: Extract build.gradle values
+        id: gradle_vals
+        run: |
+          GRADLE_FILE="android/build.gradle"
+
+          # Extract compileSdk (handles both "compileSdk 33" and "compileSdkVersion 33")
+          API=$(grep -E "compileSdk(Version)?\s+[0-9]+" "$GRADLE_FILE"                 | grep -oP "[0-9]+" | head -1)
+
+          # Extract buildToolsVersion (handles quotes: "33.0.2" or '33.0.2')
+          BT=$(grep "buildToolsVersion" "$GRADLE_FILE"                | grep -oP '["'][0-9]+\.[0-9]+\.[0-9]+["']'                | tr -d '"'"'" | head -1)
+
+          if [ -z "$API" ]; then
+            echo "ERROR: could not find compileSdk in $GRADLE_FILE"
+            cat "$GRADLE_FILE"
+            exit 1
+          fi
+          if [ -z "$BT" ]; then
+            echo "ERROR: could not find buildToolsVersion in $GRADLE_FILE"
+            cat "$GRADLE_FILE"
+            exit 1
+          fi
+
+          echo "Extracted: compileSdk=$API  buildToolsVersion=$BT"
+          echo "api_level=$API" >> $GITHUB_OUTPUT
+          echo "build_tools=$BT" >> $GITHUB_OUTPUT
+
+      # ── Android SDK ─────────────────────────────────────────────────────────
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: ${{ steps.gradle_vals.outputs.api_level }}
+          build-tools: ${{ steps.gradle_vals.outputs.build_tools }}
+          accept-android-sdk-licenses: true
+
+      # ── Gradle permissions ──────────────────────────────────────────────────
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      # ── Validate Gradle wrapper (security — prevents wrapper substitution attack)
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v3
+
+      # ── Build ────────────────────────────────────────────────────────────────
+      - name: Build debug APK
+        run: ./gradlew android:assembleDebug --no-daemon --stacktrace
+        env:
+          # Disable Gradle daemon in CI — avoids stale daemon issues
+          GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=false"
+
+      # ── Locate APK ──────────────────────────────────────────────────────────
+      - name: Find APK path
+        id: find_apk
+        run: |
+          APK=$(find android/build/outputs/apk/debug -name '*.apk' | head -1)
+          if [ -z "$APK" ]; then
+            echo "ERROR: No APK found after build"
+            exit 1
+          fi
+          echo "apk_path=$APK" >> $GITHUB_OUTPUT
+          echo "Found APK: $APK ($(du -sh $APK | cut -f1))"
+
+      # ── aapt smoke test ──────────────────────────────────────────────────────
+      # Verifies the APK manifest is correctly formed BEFORE upload/notify
+      - name: Install build-tools for aapt
+        run: |
+          BT="${{ steps.gradle_vals.outputs.build_tools }}"
+          BT_PATH="$ANDROID_HOME/build-tools/$BT"
+          if [ ! -f "$BT_PATH/aapt" ]; then
+            sdkmanager "build-tools;$BT"
+          fi
+          echo "$BT_PATH" >> $GITHUB_PATH
+
+      - name: APK manifest smoke test (aapt)
+        id: aapt
+        run: |
+          APK="${{ steps.find_apk.outputs.apk_path }}"
+          DUMP=$(aapt dump badging "$APK")
+
+          echo "─── aapt dump badging output ───"
+          echo "$DUMP"
+          echo "────────────────────────────────"
+
+          # Extract key fields
+          PKG=$(echo "$DUMP"    | grep "^package:"     | grep -oP "name='[^']+'" | cut -d"'" -f2)
+          VNAME=$(echo "$DUMP"  | grep "^package:"     | grep -oP "versionName='[^']+'" | cut -d"'" -f2)
+          MINSDK=$(echo "$DUMP" | grep "sdkVersion:"   | grep -oP "'[0-9]+'" | tr -d "'")
+          TGTSDK=$(echo "$DUMP" | grep "targetSdkVersion:" | grep -oP "'[0-9]+'" | tr -d "'")
+          ACTIVITY=$(echo "$DUMP" | grep "launchable-activity" | grep -oP "name='[^']+'" | cut -d"'" -f2)
+
+          echo "package_name=$PKG"       >> $GITHUB_OUTPUT
+          echo "version_name=$VNAME"     >> $GITHUB_OUTPUT
+          echo "min_sdk=$MINSDK"         >> $GITHUB_OUTPUT
+          echo "target_sdk=$TGTSDK"      >> $GITHUB_OUTPUT
+          echo "launch_activity=$ACTIVITY" >> $GITHUB_OUTPUT
+
+          # ── Assertions ──────────────────────────────────────────────────────
+
+          # 1. Package name must be set and non-empty
+          if [ -z "$PKG" ]; then
+            echo "FAIL: package name is empty in manifest"
+            exit 1
+          fi
+          echo "PASS: package name = $PKG"
+
+          # 2. Package must follow reverse-domain convention (at least 2 segments)
+          SEG_COUNT=$(echo "$PKG" | tr '.' '\n' | wc -l)
+          if [ "$SEG_COUNT" -lt 2 ]; then
+            echo "FAIL: package name '$PKG' has fewer than 2 segments"
+            exit 1
+          fi
+          echo "PASS: package name format OK ($SEG_COUNT segments)"
+
+          # 3. A launchable activity must be declared
+          if [ -z "$ACTIVITY" ]; then
+            echo "FAIL: no launchable-activity found in manifest"
+            exit 1
+          fi
+          echo "PASS: launchable activity = $ACTIVITY"
+
+          # 4. minSdkVersion must be set
+          if [ -z "$MINSDK" ]; then
+            echo "FAIL: minSdkVersion is not set"
+            exit 1
+          fi
+          echo "PASS: minSdkVersion = $MINSDK"
+
+          # 5. minSdkVersion sanity range: must be >= 21 (Android 5.0)
+          if [ "$MINSDK" -lt 21 ]; then
+            echo "FAIL: minSdkVersion $MINSDK is below 21 — too old for modern devices"
+            exit 1
+          fi
+          echo "PASS: minSdkVersion $MINSDK >= 21"
+
+          # 6. targetSdkVersion must be set
+          if [ -z "$TGTSDK" ]; then
+            echo "FAIL: targetSdkVersion is not set"
+            exit 1
+          fi
+          echo "PASS: targetSdkVersion = $TGTSDK"
+
+          # 7. targetSdk must be >= minSdk (sanity check)
+          if [ "$TGTSDK" -lt "$MINSDK" ]; then
+            echo "FAIL: targetSdkVersion $TGTSDK < minSdkVersion $MINSDK"
+            exit 1
+          fi
+          echo "PASS: targetSdkVersion >= minSdkVersion"
+
+          echo ""
+          echo "✅ All APK manifest assertions passed"
+
+      # ── APK size check ───────────────────────────────────────────────────────
+      # A debug APK for a simple arcade game should not exceed ~30 MB.
+      # If it does, something is wrong (resources bloat, wrong dependency, etc.)
+      - name: APK size check
+        run: |
+          APK="${{ steps.find_apk.outputs.apk_path }}"
+          SIZE_BYTES=$(stat -c%s "$APK")
+          SIZE_MB=$(echo "scale=2; $SIZE_BYTES / 1048576" | bc)
+          MAX_MB=30
+
+          echo "APK size: ${SIZE_MB} MB"
+
+          if (( SIZE_BYTES > MAX_MB * 1048576 )); then
+            echo "FAIL: APK is ${SIZE_MB} MB — exceeds ${MAX_MB} MB limit for a simple arcade game"
+            echo "Check for accidentally bundled large assets or wrong dependencies"
+            exit 1
+          fi
+          echo "PASS: APK size ${SIZE_MB} MB is within ${MAX_MB} MB limit"
+
+      # ── Asset presence check ─────────────────────────────────────────────────
+      # Verifies the APK actually contains the asset files referenced in GAME_SPEC.
+      # Uses aapt list to inspect APK contents (it's a zip file).
+      - name: Asset presence check
+        run: |
+          APK="${{ steps.find_apk.outputs.apk_path }}"
+          FAILED=0
+
+          echo "Listing assets inside APK:"
+          aapt list "$APK" | grep "^assets/" || true
+
+          # Check required asset subdirectories exist inside APK
+          for DIR in "assets/backgrounds" "assets/ui"; do
+            COUNT=$(aapt list "$APK" | grep -c "^${DIR}/" || true)
+            if [ "$COUNT" -eq 0 ]; then
+              echo "FAIL: no files found under $DIR/ in APK"
+              FAILED=1
+            else
+              echo "PASS: $DIR/ contains $COUNT file(s)"
+            fi
+          done
+
+          if [ "$FAILED" -ne 0 ]; then
+            echo ""
+            echo "Asset check failed. Possible causes:"
+            echo "  - assets/ folder not configured as Android assets source in build.gradle"
+            echo "  - DALL-E generation step failed silently"
+            echo "  - Wrong asset paths in GAME_SPEC"
+            exit 1
+          fi
+
+      # ── DEX class check ──────────────────────────────────────────────────────
+      # Verifies the main launcher class is present in the compiled DEX.
+      # Catches cases where Claude Code wrote the class but put it in the wrong
+      # package, causing the manifest to reference a non-existent class.
+      - name: DEX launcher class check
+        run: |
+          APK="${{ steps.find_apk.outputs.apk_path }}"
+          ACTIVITY="${{ steps.aapt.outputs.launch_activity }}"
+
+          if [ -z "$ACTIVITY" ]; then
+            echo "SKIP: no launch activity found (caught by manifest check above)"
+            exit 0
+          fi
+
+          # Convert activity class name to DEX path: com.foo.Bar → com/foo/Bar.class
+          CLASS_PATH=$(echo "$ACTIVITY" | tr '.' '/')
+
+          # aapt list shows classes.dex entries as paths
+          DEX_CONTENT=$(aapt list "$APK" | grep "classes.dex" || true)
+
+          # Unzip DEX and use dexdump if available, otherwise just check with zipinfo
+          # Simpler approach: unzip APK and use dx/d8 tools to check class presence
+          TMPDIR=$(mktemp -d)
+          unzip -q "$APK" "classes.dex" -d "$TMPDIR" 2>/dev/null || true
+
+          if [ ! -f "$TMPDIR/classes.dex" ]; then
+            echo "WARN: could not extract classes.dex for inspection — skipping class check"
+            rm -rf "$TMPDIR"
+            exit 0
+          fi
+
+          # Use dexdump (comes with Android build tools)
+          DEXDUMP="$ANDROID_HOME/build-tools/${{ steps.gradle_vals.outputs.build_tools }}/dexdump"
+          if [ -f "$DEXDUMP" ]; then
+            if "$DEXDUMP" "$TMPDIR/classes.dex" 2>/dev/null | grep -q "$CLASS_PATH"; then
+              echo "PASS: launcher class $ACTIVITY found in DEX"
+            else
+              echo "FAIL: launcher class $ACTIVITY NOT found in DEX"
+              echo "The manifest references a class that wasn't compiled."
+              echo "Check package name in AndroidManifest.xml vs actual Java package."
+              rm -rf "$TMPDIR"
+              exit 1
+            fi
+          else
+            echo "SKIP: dexdump not available at $DEXDUMP"
+          fi
+
+          rm -rf "$TMPDIR"
+
+      # ── Upload APK artifact ──────────────────────────────────────────────────
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk-${{ github.run_number }}
+          path: ${{ steps.find_apk.outputs.apk_path }}
+          retention-days: 30
+          if-no-files-found: error
+
+      # ── Summary ─────────────────────────────────────────────────────────────
+      - name: Write job summary
+        if: always()
+        run: |
+          echo "## Build Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | \`${{ steps.aapt.outputs.package_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | \`${{ steps.aapt.outputs.version_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Min SDK | \`${{ steps.aapt.outputs.min_sdk }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Run | #${{ github.run_number }} |" >> $GITHUB_STEP_SUMMARY
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # JOB 2 — NOTIFY
+  # Runs after build job regardless of outcome — sends Telegram message
+  # ────────────────────────────────────────────────────────────────────────────
+  notify:
+    name: Telegram Notification
+    runs-on: ubuntu-latest
+    needs: build
+    if: always()   # run even if build job failed
+
+    steps:
+      - name: Notify success
+        if: needs.build.result == 'success'
+        run: |
+          TEXT="✅ *CI Build Passed*%0A%0A"
+          TEXT+="🎮 Repo: \`${{ github.repository }}\`%0A"
+          TEXT+="📦 Package: \`${{ needs.build.outputs.package_name }}\`%0A"
+          TEXT+="🏷 Version: \`${{ needs.build.outputs.version_name }}\`%0A"
+          TEXT+="📱 Min SDK: \`${{ needs.build.outputs.min_sdk }}\`%0A"
+          TEXT+="🔗 [View run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TG_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TG_CHAT_ID }}" \
+            -d parse_mode="Markdown" \
+            -d text="$TEXT"
+
+      - name: Notify failure
+        if: needs.build.result != 'success'
+        run: |
+          TEXT="❌ *CI Build Failed*%0A%0A"
+          TEXT+="🎮 Repo: \`${{ github.repository }}\`%0A"
+          TEXT+="🔗 [View run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TG_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TG_CHAT_ID }}" \
+            -d parse_mode="Markdown" \
+            -d text="$TEXT"
+
+      # Send APK via Telegram sendDocument when build succeeded
+      - name: Download APK artifact for Telegram
+        if: needs.build.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: debug-apk-${{ github.run_number }}
+          path: /tmp/apk
+
+      - name: Send APK via Telegram
+        if: needs.build.result == 'success'
+        run: |
+          APK=$(find /tmp/apk -name '*.apk' | head -1)
+          if [ -z "$APK" ]; then
+            echo "No APK to send"
+            exit 0
+          fi
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TG_TOKEN }}/sendDocument" \
+            -F chat_id="${{ secrets.TG_CHAT_ID }}" \
+            -F caption="📦 ${{ github.repository }} — debug APK (run #${{ github.run_number }})" \
+            -F document=@"$APK"
