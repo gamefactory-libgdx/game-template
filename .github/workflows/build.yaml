@@ -151,7 +151,7 @@ jobs:
         echo "PASS: package name = $PKG"
 
         # 2. Package must follow reverse-domain convention (at least 2 segments)
-        SEG_COUNT=$(echo "$PKG" | tr '.' '\n' | wc -l)
+        SEG_COUNT=$(echo "$PKG" | tr '.' '\n' | wc -l | tr -d ' ')
         if [ "$SEG_COUNT" -lt 2 ]; then
           echo "FAIL: package name '$PKG' has fewer than 2 segments"
           exit 1
