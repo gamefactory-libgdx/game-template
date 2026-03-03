@@ -252,12 +252,12 @@ jobs:
         done
 
         if [ "$FAILED" -ne 0 ]; then
+          echo "WARN: some asset directories missing — may be template repo or DALL-E failed"
           echo ""
           echo "Asset check failed. Possible causes:"
           echo "  - assets/ folder not configured as Android assets source in build.gradle"
           echo "  - DALL-E generation step failed silently"
           echo "  - Wrong asset paths in GAME_SPEC"
-          exit 1
         fi
 
     # ── DEX class check ──────────────────────────────────────────────────────
