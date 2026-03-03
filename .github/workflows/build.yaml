@@ -76,9 +76,10 @@ jobs:
     - name: Set up Android SDK
       uses: android-actions/setup-android@v3
       with:
-        api-level: ${{ steps.gradle_vals.outputs.api_level }}
-        build-tools: ${{ steps.gradle_vals.outputs.build_tools }}
         accept-android-sdk-licenses: true
+        packages: >-
+          platforms;android-${{ steps.gradle_vals.outputs.api_level }}
+          build-tools;${{ steps.gradle_vals.outputs.build_tools }}
 
     # ── Gradle permissions ──────────────────────────────────────────────────
     - name: Make Gradle wrapper executable
@@ -124,12 +125,19 @@ jobs:
         echo "$DUMP"
         echo "────────────────────────────────"
 
-        # Extract key fields with more precise regex patterns
-        PKG=$(echo "$DUMP" | grep "^package:" | sed -n "s/.*name='\([^']*\)'.*/\1/p" | tr -d '\r\n' | xargs)
-        VNAME=$(echo "$DUMP" | grep "^package:" | sed -n "s/.*versionName='\([^']*\)'.*/\1/p" | tr -d '\r\n' | xargs)
-        MINSDK=$(echo "$DUMP" | grep "^sdkVersion:" | sed -n "s/.*'\([0-9]*\)'.*/\1/p" | tr -d '\r\n' | xargs)
-        TGTSDK=$(echo "$DUMP" | grep "^targetSdkVersion:" | sed -n "s/.*'\([0-9]*\)'.*/\1/p" | tr -d '\r\n' | xargs)
-        ACTIVITY=$(echo "$DUMP" | grep "launchable-activity" | sed -n "s/.*name='\([^']*\)'.*/\1/p" | tr -d '\r\n' | xargs)
+        # Extract key fields using awk for more reliable parsing
+        PKG=$(echo "$DUMP" | awk -F"name='" '/^package:/ {match($2, /^[^'\'']*/, arr); print arr[0]; exit}')
+        VNAME=$(echo "$DUMP" | awk -F"versionName='" '/^package:/ {match($2, /^[^'\'']*/, arr); print arr[0]; exit}')
+        MINSDK=$(echo "$DUMP" | awk '/^sdkVersion:/ {match($0, /'\''([0-9]+)'\''/, arr); print arr[1]; exit}')
+        TGTSDK=$(echo "$DUMP" | awk '/^targetSdkVersion:/ {match($0, /'\''([0-9]+)'\''/, arr); print arr[1]; exit}')
+        ACTIVITY=$(echo "$DUMP" | awk -F"name='" '/launchable-activity:/ {match($2, /^[^'\'']*/, arr); print arr[0]; exit}')
+        
+        # Clean extracted values
+        PKG=$(echo "$PKG" | tr -d '\r\n' | xargs)
+        VNAME=$(echo "$VNAME" | tr -d '\r\n' | xargs)  
+        MINSDK=$(echo "$MINSDK" | tr -d '\r\n' | xargs)
+        TGTSDK=$(echo "$TGTSDK" | tr -d '\r\n' | xargs)
+        ACTIVITY=$(echo "$ACTIVITY" | tr -d '\r\n' | xargs)
 
         # Debug output
         echo "Extracted values:"
