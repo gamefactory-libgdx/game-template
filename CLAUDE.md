@@ -268,3 +268,4 @@ If no reference games provided — build clean, minimal implementation matching 
 - [ ] `dispose()` on every screen
 - [ ] Package name updated from `com.factory.template` to `com.factory.GAME_SLUG`
 - [ ] `applicationId` in `android/build.gradle` updated to match package name
+- [ ] android/res/values/strings.xml app_name updated to game title
