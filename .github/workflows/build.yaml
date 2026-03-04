@@ -9,7 +9,7 @@ on:
 # Cancel in-progress runs on the same branch to save minutes
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   JAVA_VERSION: '17'
