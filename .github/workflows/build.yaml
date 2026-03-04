@@ -54,7 +54,10 @@ jobs:
       run: |
         GRADLE_FILE="android/build.gradle"
 
-        API=$(grep -E "compileSdk(Version)?[[:space:]]*=?[[:space:]]*[0-9]+" "$GRADLE_FILE" | grep -oP "[0-9]+" | head -1)
+        # Extract compileSdk (handles both "compileSdk 33" and "compileSdkVersion 33")
+        API=$(grep -E "compileSdk(Version)?\s+[0-9]+" "$GRADLE_FILE" | grep -oP "[0-9]+" | head -1)
+        
+        # Extract buildToolsVersion (handles quotes: "33.0.2" or '33.0.2')
         BT=$(grep "buildToolsVersion" "$GRADLE_FILE" | grep -oP '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
 
         if [ -z "$API" ]; then
