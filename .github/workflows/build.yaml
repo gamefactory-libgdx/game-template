@@ -55,8 +55,8 @@ jobs:
         GRADLE_FILE="android/build.gradle"
 
         # Extract compileSdk (handles both "compileSdk 33" and "compileSdkVersion 33")
-        API=$(grep -E "compileSdk(Version)?\s+[0-9]+" "$GRADLE_FILE" | grep -oP "[0-9]+" | head -1)
-        
+        API=$(grep -E "compileSdk(Version)?(\s*=\s*|\s+)[0-9]+" "$GRADLE_FILE" | grep -oP "[0-9]+" | head -1)
+
         # Extract buildToolsVersion (handles quotes: "33.0.2" or '33.0.2')
         BT=$(grep "buildToolsVersion" "$GRADLE_FILE" | grep -oP '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
 
@@ -81,8 +81,7 @@ jobs:
       with:
         accept-android-sdk-licenses: true
         packages: >-
-          platforms;android-${{ steps.gradle_vals.outputs.api_level }}
-          build-tools;${{ steps.gradle_vals.outputs.build_tools }}
+          platforms;android-${{ steps.gradle_vals.outputs.api_level }} build-tools;${{ steps.gradle_vals.outputs.build_tools }}
 
     # ── Gradle permissions ──────────────────────────────────────────────────
     - name: Make Gradle wrapper executable
@@ -134,7 +133,7 @@ jobs:
         MINSDK=$(echo "$DUMP" | awk '/^sdkVersion:/ {match($0, /'\''([0-9]+)'\''/, arr); print arr[1]; exit}')
         TGTSDK=$(echo "$DUMP" | awk '/^targetSdkVersion:/ {match($0, /'\''([0-9]+)'\''/, arr); print arr[1]; exit}')
         ACTIVITY=$(echo "$DUMP" | awk -F"name='" '/launchable-activity:/ {match($2, /^[^'\'']*/, arr); print arr[0]; exit}')
-        
+
         # Clean extracted values
         PKG=$(echo "$PKG" | tr -d '\r\n' | xargs)
         VNAME=$(echo "$VNAME" | tr -d '\r\n' | xargs)  
