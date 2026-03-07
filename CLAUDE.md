@@ -166,8 +166,27 @@ If the game has multiple environments:
 
 ## 7. AndroidLauncher.java
 
-The `AndroidLauncher.java` already exists. Update ONLY the package name and
-the `AndroidApplicationConfiguration` if needed. Do not rewrite the file structure.
+Create `android/src/main/java/com/factory/GAME_SLUG/android/AndroidLauncher.java`
+(replace `GAME_SLUG` with the actual slug, dots removed — same as the package name).
+
+```java
+package com.factory.GAME_SLUG.android;
+
+import android.os.Bundle;
+import com.badlogic.gdx.backends.android.AndroidApplication;
+import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
+import com.factory.GAME_SLUG.MainGame;
+
+public class AndroidLauncher extends AndroidApplication {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        AndroidApplicationConfiguration configuration = new AndroidApplicationConfiguration();
+        configuration.useImmersiveMode = true;
+        initialize(new MainGame(), configuration);
+    }
+}
+```
 
 The applicationId in `android/build.gradle` must match the package name exactly.
 Update it from `com.factory.template` to `com.factory.GAME_SLUG`.
