@@ -115,8 +115,9 @@ is also written there, listing every available file.
 
 **Before writing ANY game object code:**
 1. Read `assets/sprites/SPRITES.md` — it is always present
-2. Use the sprites listed there for player, enemies, obstacles, collectibles
+2. Use the sprites listed there for player, enemies, obstacles, collectibles **and all UI**
 3. Never use plain colored rectangles for game objects when sprites are available
+4. Never use plain `TextButton` — always apply a button style using Kenney button PNGs
 
 ### Categories available
 | Category | Sprites | Use for |
@@ -126,6 +127,7 @@ is also written there, listing every available file.
 | `racing/` | car_player (yellow), car_red, car_blue, car_green, car_black | Top-down car games |
 | `puzzle/` | balls (blue/yellow/grey), paddles, back tiles | Brick breaker, ball games |
 | `generic/`| coin_gold, coin_silver, star, gem (4 colors) | Collectibles in any game |
+| `ui/`     | buttons (5 colours × up/down), round icon buttons, slider, 18 HUD icons | **Every screen** — all buttons and settings sliders |
 
 ### Loading sprites with AssetManager
 
@@ -161,7 +163,52 @@ TextureRegion frame = walkAnim.getKeyFrame(stateTime, true);
 batch.draw(frame, x, y, width, height);
 ```
 
-### Important rules
+### UI button rules — MANDATORY
+Every screen must use styled buttons. Never use unstyled `TextButton`.
+
+```java
+// Helper — reuse across all screens (define once in MainGame or a UIFactory):
+private TextButton.TextButtonStyle makeButtonStyle(String upFile, String downFile) {
+    TextButton.TextButtonStyle s = new TextButton.TextButtonStyle();
+    s.font      = game.skin.getFont("default-font"); // your BitmapFont
+    s.up        = new TextureRegionDrawable(manager.get(upFile,   Texture.class));
+    s.down      = new TextureRegionDrawable(manager.get(downFile, Texture.class));
+    s.fontColor = Color.WHITE;
+    return s;
+}
+
+// Primary action (Play, Start, Continue):
+TextButton playBtn = new TextButton("PLAY",
+    makeButtonStyle("sprites/button_blue.png", "sprites/button_blue_pressed.png"));
+playBtn.setSize(240, 70);
+
+// Secondary / Back / Menu:
+TextButton backBtn = new TextButton("BACK",
+    makeButtonStyle("sprites/button_grey.png", "sprites/button_grey_pressed.png"));
+backBtn.setSize(200, 60);
+
+// Buy / Confirm in ShopScreen:
+TextButton buyBtn = new TextButton("BUY",
+    makeButtonStyle("sprites/button_green.png", "sprites/button_green_pressed.png"));
+
+// Retry / Danger:
+TextButton retryBtn = new TextButton("RETRY",
+    makeButtonStyle("sprites/button_red.png", "sprites/button_red_pressed.png"));
+```
+
+Standard button sizes: main 240×70 · secondary 200×60 · round icon 60×60
+
+### Settings screen — use icons for toggles
+```java
+// Music toggle button using icon sprites:
+ImageButton musicBtn = new ImageButton(
+    new TextureRegionDrawable(manager.get("sprites/icon_music_on.png",  Texture.class)),
+    new TextureRegionDrawable(manager.get("sprites/icon_music_off.png", Texture.class))
+);
+musicBtn.setChecked(!musicEnabled); // checked state = off icon shown
+```
+
+### Other important sprite rules
 - Load sprites via `AssetManager` — zero `new Texture("sprites/...")` calls
 - Scale sprites to world units (not pixel size): typical player is 64×64 world units
 - If a sprite category doesn't match the game theme, use `generic/` collectibles
@@ -438,6 +485,9 @@ If no reference games provided — build clean, minimal implementation matching 
 - [ ] android/res/values/strings.xml app_name updated to game title
 - [ ] `assets/sprites/SPRITES.md` was read before writing game object code
 - [ ] Player, enemies, collectibles use sprites from `assets/sprites/` — no plain rectangles
+- [ ] All buttons use Kenney button PNGs (`button_blue.png` etc.) — no unstyled `TextButton`
+- [ ] Every button has BOTH `up` (depth shadow) and `down` (flat) drawable set
+- [ ] Settings screen uses `icon_music_on/off` and `icon_sfx_on/off` for toggles
 - [ ] If coins/currency collected → `ShopScreen` exists with spendable items
 - [ ] If no `ShopScreen` → no coin collection; collectibles add score directly
 - [ ] `LeaderboardScreen` has a visible "Main Menu" / "Back" button
