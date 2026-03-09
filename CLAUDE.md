@@ -221,9 +221,8 @@ musicBtn.setChecked(!musicEnabled); // checked state = off icon shown
 ### Coins / Currency — CRITICAL
 If the game collects coins, gems, or any in-game currency:
 - The player MUST be able to spend them → always implement a `ShopScreen`
-- `ShopScreen` must have at least 2 purchasable items (e.g. skins, power-ups, continues)
-- Coin balance persists via SharedPreferences
 - `ShopScreen` is reachable from `MainMenuScreen` and has a "Main Menu" back button
+- Coin balance persists via SharedPreferences
 
 If the GAME_SPEC does **not** define a shop, do **not** add coin collection.
 Replace coin pickups with direct score bonuses instead:
@@ -232,9 +231,62 @@ Replace coin pickups with direct score bonuses instead:
 // WRONG — coins that go nowhere (no shop = meaningless mechanic)
 collectibles.add(new Coin(x, y));
 
-// CORRECT option A — coins + ShopScreen exists
 // CORRECT option B — no shop → score bonus instead
 score += Constants.COIN_SCORE_VALUE; // direct score, no currency stored
+```
+
+### ShopScreen — MANDATORY content
+Every `ShopScreen` MUST have **exactly these two categories**:
+
+**1. Power-ups** (3 items — pure code, no extra assets needed):
+
+| Item | Price | Effect |
+|------|-------|--------|
+| Shield | 20 coins | 5 seconds invincibility on next run |
+| Coin Magnet | 30 coins | Auto-collects nearby coins for 10s |
+| 2× Score | 50 coins | Double all points for the next run |
+
+**2. Character Skins** (for runner/platformer/jetpack/space games):
+
+For **runner/jetpack/platformer** games — 3 skins using the sprite variants in `assets/sprites/`:
+
+| Skin | Price | Sprites to use |
+|------|-------|---------------|
+| Blue Alien (default) | free | `player_idle.png`, `player_walk1.png`, `player_walk2.png`, `player_jump.png` |
+| Green Alien | 100 coins | `player_idle_green.png`, `player_walk1_green.png`, etc. |
+| Pink Alien | 150 coins | `player_idle_pink.png`, `player_walk1_pink.png`, etc. |
+
+For **racing** games — 3 car skins:
+
+| Skin | Price | Sprite |
+|------|-------|--------|
+| Yellow Car (default) | free | `car_player.png` |
+| Red Car | 100 coins | `car_red.png` |
+| Blue Car | 150 coins | `car_blue.png` |
+
+For **space** games — 2 ship skins:
+
+| Skin | Price | Sprite |
+|------|-------|--------|
+| Blue Ship (default) | free | `player_ship.png` |
+| Green Ship | 100 coins | `player_ship_alt.png` |
+
+### Implementing skins — SharedPreferences pattern
+
+```java
+// Save selected skin index (0 = default, 1 = skin2, 2 = skin3)
+Preferences prefs = Gdx.app.getPreferences("GamePrefs");
+prefs.putInteger(Constants.PREF_SKIN, selectedSkinIndex);
+prefs.flush();
+
+// In GameScreen constructor — load correct player sprites based on saved skin:
+int skin = Gdx.app.getPreferences("GamePrefs").getInteger(Constants.PREF_SKIN, 0);
+String[] idleFrames = {
+    "sprites/player_idle.png",       // skin 0 — yellow (default)
+    "sprites/player_idle_green.png", // skin 1 — green
+    "sprites/player_idle_pink.png"   // skin 2 — pink
+};
+Texture playerTex = manager.get(idleFrames[skin], Texture.class);
 ```
 
 ### Collision Detection — CRITICAL
