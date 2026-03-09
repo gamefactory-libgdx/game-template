@@ -27,7 +27,9 @@ project-root/
 ├── GDD.md
 ├── assets/                          ← all game assets go here
 │   ├── backgrounds/
-│   └── ui/
+│   ├── ui/
+│   └── sprites/                     ← Kenney CC0 sprites (pre-copied by pipeline)
+│       └── SPRITES.md               ← manifest — READ THIS before using any sprite
 ├── core/
 │   └── src/main/java/com/factory/GAME_SLUG/
 │       ├── MainGame.java            ← extends Game
@@ -72,7 +74,102 @@ Every game MUST have **between 8 and 10 screens**. Hard requirement.
 
 ---
 
-## 4. Navigation Rules — MANDATORY
+## 4. Physics Constants — MANDATORY
+
+### Hold-to-fly / jetpack mechanic
+If the game uses a "hold screen to fly/rise" mechanic (jetpack, flappy, balloon, rocket):
+- `JETPACK_THRUST` (or equivalent) **MUST be at least 2× |GRAVITY|**
+- With additive physics both forces apply every frame: net = THRUST + GRAVITY
+- If THRUST < |GRAVITY| the player can never rise — game is unplayable
+
+```java
+// CORRECT — thrust overcomes gravity, net force is upward when holding
+public static final float GRAVITY        = -900f;
+public static final float JETPACK_THRUST = 1800f; // 2× gravity → net +900 upward
+public static final float MAX_FALL_SPEED = -700f;
+
+// WRONG — thrust less than gravity, player always falls even when holding
+public static final float GRAVITY        = -900f;
+public static final float JETPACK_THRUST =  600f; // net -300 → never rises
+```
+
+### Touch input in GameScreen with a HUD Stage
+When a HUD `Stage` is in the `InputMultiplexer`, always poll input via `Gdx.input.isTouched()`
+for game physics — never rely on Stage touch events for continuous hold detection.
+
+```java
+// CORRECT — polling works regardless of whether Stage consumed the event
+boolean thrusting = Gdx.input.isTouched();
+
+// WRONG — Stage touchDown fires once, not continuously while held
+```
+
+---
+
+## 5. Sprites — MANDATORY
+
+### How sprites work
+The pipeline automatically copies a curated Kenney CC0 sprite library into
+`assets/sprites/` before Claude runs. A manifest `assets/sprites/SPRITES.md`
+is also written there, listing every available file.
+
+**Before writing ANY game object code:**
+1. Read `assets/sprites/SPRITES.md` — it is always present
+2. Use the sprites listed there for player, enemies, obstacles, collectibles
+3. Never use plain colored rectangles for game objects when sprites are available
+
+### Categories available
+| Category | Sprites | Use for |
+|----------|---------|---------|
+| `runner/` | player walk/jump/hurt, enemies (slime, fly, bee, saw), obstacles (spike, rock, lava), ground tiles | Side-scrollers, runners, jetpack, flappy-style |
+| `space/`  | player ships, enemy ships (4 types), lasers, asteroids | Space shooters, asteroid dodge |
+| `racing/` | car_player (yellow), car_red, car_blue, car_green, car_black | Top-down car games |
+| `puzzle/` | balls (blue/yellow/grey), paddles, back tiles | Brick breaker, ball games |
+| `generic/`| coin_gold, coin_silver, star, gem (4 colors) | Collectibles in any game |
+
+### Loading sprites with AssetManager
+
+```java
+// In your loading screen or MainGame:
+manager.load("sprites/player_idle.png", Texture.class);
+manager.load("sprites/player_walk1.png", Texture.class);
+manager.load("sprites/enemy_slime.png", Texture.class);
+manager.load("sprites/coin_gold.png", Texture.class);
+// ... load all sprites you'll use
+
+// In your screen (after finishLoading):
+Texture playerTex = manager.get("sprites/player_idle.png", Texture.class);
+```
+
+### Animation example (walk cycle)
+
+```java
+// Declare
+private Animation<TextureRegion> walkAnim;
+private float stateTime = 0f;
+
+// In constructor (after assets loaded):
+TextureRegion[] frames = {
+    new TextureRegion(manager.get("sprites/player_walk1.png", Texture.class)),
+    new TextureRegion(manager.get("sprites/player_walk2.png", Texture.class))
+};
+walkAnim = new Animation<>(0.15f, frames);
+
+// In render():
+stateTime += delta;
+TextureRegion frame = walkAnim.getKeyFrame(stateTime, true);
+batch.draw(frame, x, y, width, height);
+```
+
+### Important rules
+- Load sprites via `AssetManager` — zero `new Texture("sprites/...")` calls
+- Scale sprites to world units (not pixel size): typical player is 64×64 world units
+- If a sprite category doesn't match the game theme, use `generic/` collectibles
+  and draw obstacles/terrain using `ShapeRenderer` as fallback
+
+---
+
+## 6. Navigation Rules — MANDATORY
 
 These are hard requirements based on real bugs. Violating them causes broken UX.
 
@@ -121,7 +218,7 @@ retryButton.addListener(new ChangeListener() {
 
 ---
 
-## 5. Viewport — MANDATORY — No Black Bars
+## 7. Viewport — MANDATORY — No Black Bars
 
 Every screen MUST use `StretchViewport` to fill the entire screen with no black bars.
 
@@ -154,7 +251,7 @@ All game coordinates use world units (480x854), never raw pixel values.
 
 ---
 
-## 6. Location / World Variants
+## 8. Location / World Variants
 
 If the game has multiple environments:
 - Each gets its own `GameScreen` subclass
@@ -164,7 +261,7 @@ If the game has multiple environments:
 
 ---
 
-## 7. AndroidLauncher.java
+## 9. AndroidLauncher.java
 
 Create `android/src/main/java/com/factory/GAME_SLUG/android/AndroidLauncher.java`
 (replace `GAME_SLUG` with the actual slug, dots removed — same as the package name).
@@ -193,7 +290,7 @@ Update it from `com.factory.template` to `com.factory.GAME_SLUG`.
 
 ---
 
-## 8. Assets
+## 10. Assets
 
 ```java
 // CORRECT
@@ -210,7 +307,7 @@ Texture bg = new Texture("backgrounds/bg_desert.png");
 
 ---
 
-## 9. Constants.java
+## 11. Constants.java
 
 All magic numbers go here — speeds, sizes, timings, score values,
 SharedPreferences keys, world dimensions. Never hardcode numbers inline.
@@ -225,7 +322,7 @@ public class Constants {
 
 ---
 
-## 10. Build
+## 12. Build
 
 ```bash
 ./gradlew android:assembleDebug
@@ -237,7 +334,7 @@ public class Constants {
 
 ---
 
-## 11. Data Persistence
+## 13. Data Persistence
 
 ```java
 Preferences prefs = Gdx.app.getPreferences("GamePrefs");
@@ -249,7 +346,7 @@ Keys defined in `Constants.java`. Save: high scores, unlocks, settings.
 
 ---
 
-## 12. Reference Games
+## 14. Reference Games
 
 If reference games are provided in the prompt, they are at:
 ```
@@ -267,7 +364,7 @@ If no reference games provided — build clean, minimal implementation matching 
 
 ---
 
-## 13. Completion Checklist
+## 15. Completion Checklist
 
 - [ ] `./gradlew android:assembleDebug` → BUILD SUCCESSFUL
 - [ ] Exactly 8-10 screens implemented
@@ -288,3 +385,5 @@ If no reference games provided — build clean, minimal implementation matching 
 - [ ] Package name updated from `com.factory.template` to `com.factory.GAME_SLUG`
 - [ ] `applicationId` in `android/build.gradle` updated to match package name
 - [ ] android/res/values/strings.xml app_name updated to game title
+- [ ] `assets/sprites/SPRITES.md` was read before writing game object code
+- [ ] Player, enemies, collectibles use sprites from `assets/sprites/` — no plain rectangles
