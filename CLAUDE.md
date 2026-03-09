@@ -169,13 +169,64 @@ batch.draw(frame, x, y, width, height);
 
 ---
 
-## 6. Navigation Rules — MANDATORY
+## 6. Game Mechanics Consistency — MANDATORY
+
+### Coins / Currency — CRITICAL
+If the game collects coins, gems, or any in-game currency:
+- The player MUST be able to spend them → always implement a `ShopScreen`
+- `ShopScreen` must have at least 2 purchasable items (e.g. skins, power-ups, continues)
+- Coin balance persists via SharedPreferences
+- `ShopScreen` is reachable from `MainMenuScreen` and has a "Main Menu" back button
+
+If the GAME_SPEC does **not** define a shop, do **not** add coin collection.
+Replace coin pickups with direct score bonuses instead:
+
+```java
+// WRONG — coins that go nowhere (no shop = meaningless mechanic)
+collectibles.add(new Coin(x, y));
+
+// CORRECT option A — coins + ShopScreen exists
+// CORRECT option B — no shop → score bonus instead
+score += Constants.COIN_SCORE_VALUE; // direct score, no currency stored
+```
+
+### Collision Detection — CRITICAL
+Every visual element that should kill/hurt the player **MUST** have an active collision `Rectangle`.
+Background decorations (ambient shapes, parallax art, hexagons, panels) must **NEVER** have collision rectangles.
+
+**Rule: if it should kill you → it has a Rectangle. If it is decoration → no Rectangle.**
+
+```java
+// Maintain two SEPARATE lists — never mix them
+private Array<Rectangle> obstacles;    // COLLIDABLE — kills player on contact
+private Array<ShapeData>  decorations; // VISUAL ONLY — never collision-tested
+
+// In update():
+for (Rectangle obs : obstacles) {
+    if (playerRect.overlaps(obs)) {
+        triggerGameOver();
+    }
+}
+// decorations are only drawn — never checked for collision
+```
+
+Common mistake: drawing background shapes with `ShapeRenderer` and accidentally adding
+them to the obstacle list. Always ask: "Is this meant to kill the player?"
+- Yes → add to `obstacles` list
+- No  → draw only, never in `obstacles`
+
+---
+
+## 7. Navigation Rules — MANDATORY
 
 These are hard requirements based on real bugs. Violating them causes broken UX.
 
 ### Every screen MUST have a "Main Menu" button
 - No screen is a dead end
-- Every screen — game, pause, game over, leaderboard, settings, level complete — must have a clearly visible button that returns to `MainMenuScreen`
+- **Every** screen — `GameScreen`, `PauseScreen`, `GameOverScreen`, `LeaderboardScreen`,
+  `SettingsScreen`, `ShopScreen`, level complete — must have a clearly visible button
+  that returns to `MainMenuScreen`
+- `LeaderboardScreen` is the most frequently forgotten — it **always** needs a back button
 - The Android system back button must also navigate to `MainMenuScreen`, never exit the app
 
 ```java
@@ -218,7 +269,7 @@ retryButton.addListener(new ChangeListener() {
 
 ---
 
-## 7. Viewport — MANDATORY — No Black Bars
+## 8. Viewport — MANDATORY — No Black Bars
 
 Every screen MUST use `StretchViewport` to fill the entire screen with no black bars.
 
@@ -251,7 +302,7 @@ All game coordinates use world units (480x854), never raw pixel values.
 
 ---
 
-## 8. Location / World Variants
+## 9. Location / World Variants
 
 If the game has multiple environments:
 - Each gets its own `GameScreen` subclass
@@ -261,7 +312,7 @@ If the game has multiple environments:
 
 ---
 
-## 9. AndroidLauncher.java
+## 10. AndroidLauncher.java
 
 Create `android/src/main/java/com/factory/GAME_SLUG/android/AndroidLauncher.java`
 (replace `GAME_SLUG` with the actual slug, dots removed — same as the package name).
@@ -290,7 +341,7 @@ Update it from `com.factory.template` to `com.factory.GAME_SLUG`.
 
 ---
 
-## 10. Assets
+## 11. Assets
 
 ```java
 // CORRECT
@@ -307,7 +358,7 @@ Texture bg = new Texture("backgrounds/bg_desert.png");
 
 ---
 
-## 11. Constants.java
+## 12. Constants.java
 
 All magic numbers go here — speeds, sizes, timings, score values,
 SharedPreferences keys, world dimensions. Never hardcode numbers inline.
@@ -322,7 +373,7 @@ public class Constants {
 
 ---
 
-## 12. Build
+## 13. Build
 
 ```bash
 ./gradlew android:assembleDebug
@@ -334,7 +385,7 @@ public class Constants {
 
 ---
 
-## 13. Data Persistence
+## 14. Data Persistence
 
 ```java
 Preferences prefs = Gdx.app.getPreferences("GamePrefs");
@@ -346,7 +397,7 @@ Keys defined in `Constants.java`. Save: high scores, unlocks, settings.
 
 ---
 
-## 14. Reference Games
+## 15. Reference Games
 
 If reference games are provided in the prompt, they are at:
 ```
@@ -364,7 +415,7 @@ If no reference games provided — build clean, minimal implementation matching 
 
 ---
 
-## 15. Completion Checklist
+## 16. Completion Checklist
 
 - [ ] `./gradlew android:assembleDebug` → BUILD SUCCESSFUL
 - [ ] Exactly 8-10 screens implemented
@@ -387,3 +438,9 @@ If no reference games provided — build clean, minimal implementation matching 
 - [ ] android/res/values/strings.xml app_name updated to game title
 - [ ] `assets/sprites/SPRITES.md` was read before writing game object code
 - [ ] Player, enemies, collectibles use sprites from `assets/sprites/` — no plain rectangles
+- [ ] If coins/currency collected → `ShopScreen` exists with spendable items
+- [ ] If no `ShopScreen` → no coin collection; collectibles add score directly
+- [ ] `LeaderboardScreen` has a visible "Main Menu" / "Back" button
+- [ ] Every obstacle that can kill the player has a collision `Rectangle`
+- [ ] Background decorations (ambient shapes, parallax art) have NO collision rectangles
+- [ ] Collidable vs decorative objects kept in separate lists — never mixed
