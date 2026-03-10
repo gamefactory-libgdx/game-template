@@ -484,9 +484,11 @@ public Music   currentMusic = null;
 
 ```java
 // Music — use Music class (streaming)
-manager.load("sounds/music/music_menu.ogg",       Music.class);
-manager.load("sounds/music/music_gameplay.ogg",   Music.class);
-manager.load("sounds/music/music_game_over.ogg",  Music.class);
+manager.load("sounds/music/music_menu.ogg",           Music.class);
+manager.load("sounds/music/music_gameplay.ogg",       Music.class);
+manager.load("sounds/music/music_gameplay_alt.ogg",   Music.class);
+manager.load("sounds/music/music_gameplay_space.ogg", Music.class);
+manager.load("sounds/music/music_game_over.ogg",      Music.class);
 
 // SFX — use Sound class (buffered)
 manager.load("sounds/sfx/sfx_button_click.ogg",   Sound.class);
@@ -501,13 +503,23 @@ manager.load("sounds/sfx/sfx_power_up.ogg",       Sound.class);
 manager.load("sounds/sfx/sfx_shoot.ogg",          Sound.class);
 ```
 
-### Playing music — helper in MainGame
+### Playing music — helpers in MainGame
 
 ```java
+// For menu and gameplay screens — loops forever
 public void playMusic(String path) {
     if (currentMusic != null && currentMusic.isPlaying()) currentMusic.stop();
     currentMusic = manager.get(path, Music.class);
     currentMusic.setLooping(true);
+    currentMusic.setVolume(0.7f);
+    if (musicEnabled) currentMusic.play();
+}
+
+// For game over screen — plays ONCE then stops (never loops)
+public void playMusicOnce(String path) {
+    if (currentMusic != null && currentMusic.isPlaying()) currentMusic.stop();
+    currentMusic = manager.get(path, Music.class);
+    currentMusic.setLooping(false);  // CRITICAL: game over must NOT loop
     currentMusic.setVolume(0.7f);
     if (musicEnabled) currentMusic.play();
 }
@@ -518,11 +530,14 @@ Usage per screen:
 // MainMenuScreen constructor:
 game.playMusic("sounds/music/music_menu.ogg");
 
-// GameScreen constructor:
+// GameScreen constructor — general (runners, puzzles, racing):
 game.playMusic("sounds/music/music_gameplay.ogg");
 
-// GameOverScreen constructor:
-game.playMusic("sounds/music/music_game_over.ogg");
+// GameScreen constructor — space shooter games:
+game.playMusic("sounds/music/music_gameplay_space.ogg");
+
+// GameOverScreen constructor — plays ONCE, does NOT loop:
+game.playMusicOnce("sounds/music/music_game_over.ogg");
 ```
 
 ### Playing SFX
@@ -575,7 +590,8 @@ public static final String PREF_SFX   = "sfxEnabled";
 ### Rules
 - Always use `Music` for background tracks, `Sound` for SFX — never swap them
 - Always load via `AssetManager` — never `Gdx.audio.newSound()` or `Gdx.audio.newMusic()`
-- Music must loop: `setLooping(true)`
+- Menu / gameplay music must loop: `setLooping(true)` via `playMusic()`
+- **Game over music must NOT loop**: use `playMusicOnce()` — `setLooping(false)`
 - Stop current music before starting new: check `currentMusic != null`
 - SFX volume: `play(1.0f)` — use `play(0.5f)` for quieter effects like toggle
 
@@ -674,6 +690,8 @@ If no reference games provided — build clean, minimal implementation matching 
 - [ ] No `System.out.println` — use `Gdx.app.log`
 - [ ] `dispose()` on every screen
 - [ ] Background music plays on every screen (menu, gameplay, game over)
+- [ ] GameScreen uses `music_gameplay_space.ogg` for space shooter games, `music_gameplay.ogg` for all others
+- [ ] GameOverScreen uses `playMusicOnce()` — game over music plays once and stops, never loops
 - [ ] SFX plays on button clicks, coin collect, jump, hit, game over
 - [ ] Music/SFX toggles in SettingsScreen actually pause/resume audio
 - [ ] `PREF_MUSIC` and `PREF_SFX` saved to SharedPreferences
