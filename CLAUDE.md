@@ -127,7 +127,7 @@ is also written there, listing every available file.
 | `racing/` | car_player (yellow), car_red, car_blue, car_green, car_black | Top-down car games |
 | `puzzle/` | balls (blue/yellow/grey), paddles, back tiles | Brick breaker, ball games |
 | `generic/`| coin_gold, coin_silver, star, gem (4 colors) | Collectibles in any game |
-| `ui/`     | buttons (5 colours × up/down), round icon buttons, slider, 18 HUD icons | **Every screen** — all buttons and settings sliders |
+| `ui/`     | buttons (5 colours × up/down), round icon buttons, slider, 21 HUD icons (incl. heart, timer) | **Every screen** — all buttons, HUD icons, settings sliders |
 
 ### Loading sprites with AssetManager
 
@@ -206,6 +206,33 @@ ImageButton musicBtn = new ImageButton(
     new TextureRegionDrawable(manager.get("sprites/icon_music_off.png", Texture.class))
 );
 musicBtn.setChecked(!musicEnabled); // checked state = off icon shown
+```
+
+### HUD icons — MANDATORY source
+All HUD icons (hearts, timer, star, settings gear, etc.) **must** come from `assets/sprites/`.
+**Never** create an `assets/icons/` folder — it is redundant and will be ignored.
+
+| HUD need | Use this sprite |
+|----------|----------------|
+| Life / health indicator | `sprites/icon_heart.png` / `sprites/icon_heart_empty.png` |
+| Timer / countdown | `sprites/icon_timer.png` |
+| Star / rating | `sprites/icon_star.png` |
+| Settings gear | `sprites/icon_settings.png` |
+| Lock / unlock | `sprites/icon_locked.png` / `sprites/icon_unlocked.png` |
+| Leaderboard | `sprites/icon_leaderboard.png` |
+| Trophy | `sprites/icon_trophy.png` |
+| Close / X | `sprites/icon_close.png` |
+
+Game-specific power-up icons (e.g. `ui/power_up_laser_icon.png` from Figma) may be loaded
+from `assets/ui/` — those are exported by Figma and are game-specific, **not** generic HUD icons.
+
+```java
+// WRONG — never load from assets/icons/
+manager.load("icons/heart.png", Texture.class);
+
+// CORRECT — use the sprites/ library
+manager.load("sprites/icon_heart.png", Texture.class);
+manager.load("sprites/icon_timer.png", Texture.class);
 ```
 
 ### Other important sprite rules
