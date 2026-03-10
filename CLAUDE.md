@@ -467,7 +467,121 @@ Update it from `com.factory.template` to `com.factory.GAME_SLUG`.
 
 ---
 
-## 11. Assets
+## 11. Audio — MANDATORY
+
+Every game MUST have background music and sound effects. They are pre-copied to
+`assets/sounds/` by the pipeline. Read `assets/sounds/SOUNDS.md` for the full file list.
+
+### Fields in MainGame (shared state)
+
+```java
+public boolean musicEnabled = true;
+public boolean sfxEnabled   = true;
+public Music   currentMusic = null;
+```
+
+### Loading (in LoadingScreen or MainGame.create)
+
+```java
+// Music — use Music class (streaming)
+manager.load("sounds/music/music_menu.ogg",       Music.class);
+manager.load("sounds/music/music_gameplay.ogg",   Music.class);
+manager.load("sounds/music/music_game_over.ogg",  Music.class);
+
+// SFX — use Sound class (buffered)
+manager.load("sounds/sfx/sfx_button_click.ogg",   Sound.class);
+manager.load("sounds/sfx/sfx_button_back.ogg",    Sound.class);
+manager.load("sounds/sfx/sfx_toggle.ogg",         Sound.class);
+manager.load("sounds/sfx/sfx_coin.ogg",           Sound.class);
+manager.load("sounds/sfx/sfx_jump.ogg",           Sound.class);
+manager.load("sounds/sfx/sfx_hit.ogg",            Sound.class);
+manager.load("sounds/sfx/sfx_game_over.ogg",      Sound.class);
+manager.load("sounds/sfx/sfx_level_complete.ogg", Sound.class);
+manager.load("sounds/sfx/sfx_power_up.ogg",       Sound.class);
+manager.load("sounds/sfx/sfx_shoot.ogg",          Sound.class);
+```
+
+### Playing music — helper in MainGame
+
+```java
+public void playMusic(String path) {
+    if (currentMusic != null && currentMusic.isPlaying()) currentMusic.stop();
+    currentMusic = manager.get(path, Music.class);
+    currentMusic.setLooping(true);
+    currentMusic.setVolume(0.7f);
+    if (musicEnabled) currentMusic.play();
+}
+```
+
+Usage per screen:
+```java
+// MainMenuScreen constructor:
+game.playMusic("sounds/music/music_menu.ogg");
+
+// GameScreen constructor:
+game.playMusic("sounds/music/music_gameplay.ogg");
+
+// GameOverScreen constructor:
+game.playMusic("sounds/music/music_game_over.ogg");
+```
+
+### Playing SFX
+
+```java
+// Helper — call wherever needed:
+private void playSound(String path) {
+    if (game.sfxEnabled)
+        game.manager.get(path, Sound.class).play(1.0f);
+}
+
+// Examples:
+playSound("sounds/sfx/sfx_button_click.ogg");  // every button listener
+playSound("sounds/sfx/sfx_coin.ogg");           // on coin collect
+playSound("sounds/sfx/sfx_jump.ogg");           // on jump/thrust
+playSound("sounds/sfx/sfx_hit.ogg");            // on player hurt
+playSound("sounds/sfx/sfx_game_over.ogg");      // on game over
+```
+
+### Settings screen — music/sfx toggles MUST actually work
+
+```java
+// Load saved state in every screen constructor:
+Preferences prefs = Gdx.app.getPreferences("GamePrefs");
+game.musicEnabled = prefs.getBoolean(Constants.PREF_MUSIC, true);
+game.sfxEnabled   = prefs.getBoolean(Constants.PREF_SFX,   true);
+
+// Toggle listener:
+musicBtn.addListener(new ChangeListener() {
+    public void changed(ChangeEvent e, Actor a) {
+        game.musicEnabled = !game.musicEnabled;
+        prefs.putBoolean(Constants.PREF_MUSIC, game.musicEnabled);
+        prefs.flush();
+        if (game.currentMusic != null) {
+            if (game.musicEnabled) game.currentMusic.play();
+            else game.currentMusic.pause();
+        }
+        playSound("sounds/sfx/sfx_toggle.ogg");
+    }
+});
+```
+
+### Constants required
+
+```java
+public static final String PREF_MUSIC = "musicEnabled";
+public static final String PREF_SFX   = "sfxEnabled";
+```
+
+### Rules
+- Always use `Music` for background tracks, `Sound` for SFX — never swap them
+- Always load via `AssetManager` — never `Gdx.audio.newSound()` or `Gdx.audio.newMusic()`
+- Music must loop: `setLooping(true)`
+- Stop current music before starting new: check `currentMusic != null`
+- SFX volume: `play(1.0f)` — use `play(0.5f)` for quieter effects like toggle
+
+---
+
+## 12. Assets
 
 ```java
 // CORRECT
@@ -559,6 +673,10 @@ If no reference games provided — build clean, minimal implementation matching 
 - [ ] SharedPreferences saves/loads scores and settings
 - [ ] No `System.out.println` — use `Gdx.app.log`
 - [ ] `dispose()` on every screen
+- [ ] Background music plays on every screen (menu, gameplay, game over)
+- [ ] SFX plays on button clicks, coin collect, jump, hit, game over
+- [ ] Music/SFX toggles in SettingsScreen actually pause/resume audio
+- [ ] `PREF_MUSIC` and `PREF_SFX` saved to SharedPreferences
 - [ ] Package name updated from `com.factory.template` to `com.factory.GAME_SLUG`
 - [ ] `applicationId` in `android/build.gradle` updated to match package name
 - [ ] android/res/values/strings.xml app_name updated to game title
