@@ -27,6 +27,8 @@ project-root/
 ├── GDD.md
 ├── assets/                          ← all game assets go here
 │   ├── backgrounds/
+│   ├── fonts/                       ← Roboto-Regular.ttf, Orbitron-Regular.ttf (pre-copied)
+│   ├── sounds/                      ← music + sfx .ogg files (pre-copied by pipeline)
 │   ├── ui/
 │   └── sprites/                     ← Kenney CC0 sprites (pre-copied by pipeline)
 │       └── SPRITES.md               ← manifest — READ THIS before using any sprite
@@ -126,6 +128,8 @@ is also written there, listing every available file.
 | `space/`  | player ships, enemy ships (4 types), lasers, asteroids | Space shooters, asteroid dodge |
 | `racing/` | car_player (yellow), car_red, car_blue, car_green, car_black | Top-down car games |
 | `puzzle/` | balls (blue/yellow/grey), paddles, back tiles | Brick breaker, ball games |
+| `slingshot/` | wood/stone/metal/glass blocks (square/plank/column), alien targets, debris, star ratings | Angry Birds-style slingshot, physics destruction |
+| `jumper/` | bunny player (2 skins), platforms (5 types + broken), flying/spike enemies, spring/jetpack items | Doodle Jump-style infinite vertical jumper |
 | `generic/`| coin_gold, coin_silver, star, gem (4 colors) | Collectibles in any game |
 | `ui/`     | buttons (5 colours × up/down), round icon buttons, slider, 21 HUD icons (incl. heart, timer) | **Every screen** — all buttons, HUD icons, settings sliders |
 
@@ -243,7 +247,95 @@ manager.load("sprites/icon_timer.png", Texture.class);
 
 ---
 
-## 6. Game Mechanics Consistency — MANDATORY
+## 6. Fonts — MANDATORY
+
+The pipeline pre-copies two TTF fonts into `assets/fonts/` before Claude runs.
+
+### Available fonts
+
+| File | Use for |
+|------|---------|
+| `fonts/Roboto-Regular.ttf` | Body text, labels, button labels, HUD values |
+| `fonts/Orbitron-Regular.ttf` | Titles, score display, game-over headings |
+
+**NEVER load fonts from `assets/ui/` or any other directory — they are always in `assets/fonts/`.**
+
+### Loading fonts — FreeTypeFontGenerator pattern
+
+Fonts are TTF files and must be converted to `BitmapFont` at runtime using `FreeTypeFontGenerator`.
+Do this once in `MainGame.create()` and store the results as public fields so all screens can share them.
+
+```java
+// In MainGame — public fields
+public BitmapFont fontBody;   // Roboto — labels, buttons, HUD
+public BitmapFont fontTitle;  // Orbitron — titles, scores
+
+// In MainGame.create() — generate fonts BEFORE loading other assets
+FreeTypeFontGenerator bodyGen  = new FreeTypeFontGenerator(Gdx.files.internal("fonts/Roboto-Regular.ttf"));
+FreeTypeFontGenerator titleGen = new FreeTypeFontGenerator(Gdx.files.internal("fonts/Orbitron-Regular.ttf"));
+
+FreeTypeFontGenerator.FreeTypeFontParameter param = new FreeTypeFontGenerator.FreeTypeFontParameter();
+
+param.size = 28;
+fontBody = bodyGen.generateFont(param);
+
+param.size = 48;
+fontTitle = titleGen.generateFont(param);
+
+bodyGen.dispose();
+titleGen.dispose();
+```
+
+Generate additional sizes as needed (e.g. `param.size = 20` for small labels, `param.size = 72` for big score).
+Always dispose the generator immediately after generating — keep the `BitmapFont`, not the generator.
+
+### Using fonts in button styles
+
+```java
+// CORRECT — use game.fontBody, not skin.getFont()
+private TextButton.TextButtonStyle makeButtonStyle(String upFile, String downFile) {
+    TextButton.TextButtonStyle s = new TextButton.TextButtonStyle();
+    s.font      = game.fontBody;   // ← always reference the shared font field
+    s.up        = new TextureRegionDrawable(manager.get(upFile,   Texture.class));
+    s.down      = new TextureRegionDrawable(manager.get(downFile, Texture.class));
+    s.fontColor = Color.WHITE;
+    return s;
+}
+
+// WRONG — skin.getFont() fails if no skin is loaded
+s.font = game.skin.getFont("default-font");
+```
+
+### Dispose in MainGame.dispose()
+
+```java
+@Override
+public void dispose() {
+    fontBody.dispose();
+    fontTitle.dispose();
+    manager.dispose();
+}
+```
+
+### Required Gradle dependency
+
+The `gdx-freetype` extension must be present in `core/build.gradle`:
+```groovy
+dependencies {
+    api "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+}
+```
+And in `android/build.gradle`:
+```groovy
+natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-armeabi-v7a"
+natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-arm64-v8a"
+natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86"
+natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86_64"
+```
+
+---
+
+## 7. Game Mechanics Consistency — MANDATORY
 
 ### Coins / Currency — CRITICAL
 If the game collects coins, gems, or any in-game currency:
@@ -343,7 +435,7 @@ them to the obstacle list. Always ask: "Is this meant to kill the player?"
 
 ---
 
-## 7. Navigation Rules — MANDATORY
+## 8. Navigation Rules — MANDATORY
 
 These are hard requirements based on real bugs. Violating them causes broken UX.
 
@@ -395,7 +487,7 @@ retryButton.addListener(new ChangeListener() {
 
 ---
 
-## 8. Viewport — MANDATORY — No Black Bars
+## 9. Viewport — MANDATORY — No Black Bars
 
 Every screen MUST use `StretchViewport` to fill the entire screen with no black bars.
 
@@ -428,7 +520,7 @@ All game coordinates use world units (480x854), never raw pixel values.
 
 ---
 
-## 9. Location / World Variants
+## 10. Location / World Variants
 
 If the game has multiple environments:
 - Each gets its own `GameScreen` subclass
@@ -438,7 +530,7 @@ If the game has multiple environments:
 
 ---
 
-## 10. AndroidLauncher.java
+## 11. AndroidLauncher.java
 
 Create `android/src/main/java/com/factory/GAME_SLUG/android/AndroidLauncher.java`
 (replace `GAME_SLUG` with the actual slug, dots removed — same as the package name).
@@ -467,7 +559,7 @@ Update it from `com.factory.template` to `com.factory.GAME_SLUG`.
 
 ---
 
-## 11. Audio — MANDATORY
+## 12. Audio — MANDATORY
 
 Every game MUST have background music and sound effects. They are pre-copied to
 `assets/sounds/` by the pipeline. Read `assets/sounds/SOUNDS.md` for the full file list.
@@ -507,9 +599,14 @@ manager.load("sounds/sfx/sfx_shoot.ogg",          Sound.class);
 
 ```java
 // For menu and gameplay screens — loops forever
+// CRITICAL: check if same track is already playing — do NOT restart it.
+// This prevents music restarting from the beginning when navigating to
+// SettingsScreen, LeaderboardScreen, ShopScreen, etc. that share the same track.
 public void playMusic(String path) {
-    if (currentMusic != null && currentMusic.isPlaying()) currentMusic.stop();
-    currentMusic = manager.get(path, Music.class);
+    Music requested = manager.get(path, Music.class);
+    if (requested == currentMusic && currentMusic.isPlaying()) return; // already playing — do nothing
+    if (currentMusic != null) currentMusic.stop();
+    currentMusic = requested;
     currentMusic.setLooping(true);
     currentMusic.setVolume(0.7f);
     if (musicEnabled) currentMusic.play();
@@ -517,7 +614,7 @@ public void playMusic(String path) {
 
 // For game over screen — plays ONCE then stops (never loops)
 public void playMusicOnce(String path) {
-    if (currentMusic != null && currentMusic.isPlaying()) currentMusic.stop();
+    if (currentMusic != null) currentMusic.stop();
     currentMusic = manager.get(path, Music.class);
     currentMusic.setLooping(false);  // CRITICAL: game over must NOT loop
     currentMusic.setVolume(0.7f);
@@ -597,7 +694,7 @@ public static final String PREF_SFX   = "sfxEnabled";
 
 ---
 
-## 12. Assets
+## 13. Assets
 
 ```java
 // CORRECT
@@ -614,7 +711,7 @@ Texture bg = new Texture("backgrounds/bg_desert.png");
 
 ---
 
-## 12. Constants.java
+## 14. Constants.java
 
 All magic numbers go here — speeds, sizes, timings, score values,
 SharedPreferences keys, world dimensions. Never hardcode numbers inline.
@@ -629,7 +726,7 @@ public class Constants {
 
 ---
 
-## 13. Build
+## 15. Build
 
 ```bash
 ./gradlew android:assembleDebug
@@ -641,7 +738,7 @@ public class Constants {
 
 ---
 
-## 14. Data Persistence
+## 16. Data Persistence
 
 ```java
 Preferences prefs = Gdx.app.getPreferences("GamePrefs");
@@ -653,7 +750,7 @@ Keys defined in `Constants.java`. Save: high scores, unlocks, settings.
 
 ---
 
-## 15. Reference Games
+## 17. Reference Games
 
 If reference games are provided in the prompt, they are at:
 ```
@@ -671,7 +768,7 @@ If no reference games provided — build clean, minimal implementation matching 
 
 ---
 
-## 16. Completion Checklist
+## 18. Completion Checklist
 
 - [ ] `./gradlew android:assembleDebug` → BUILD SUCCESSFUL
 - [ ] Exactly 8-10 screens implemented
@@ -685,6 +782,9 @@ If no reference games provided — build clean, minimal implementation matching 
 - [ ] Every screen uses StretchViewport — no black bars
 - [ ] All assets in GAME_SPEC exist in `assets/`
 - [ ] All assets loaded via AssetManager — zero `new Texture()` calls
+- [ ] Fonts loaded from `assets/fonts/` — never from `assets/ui/` or anywhere else
+- [ ] `game.fontBody` (Roboto) and `game.fontTitle` (Orbitron) generated in `MainGame.create()`
+- [ ] Button styles use `game.fontBody` — never `skin.getFont()`
 - [ ] `Constants.java` has WORLD_WIDTH, WORLD_HEIGHT and all magic numbers
 - [ ] SharedPreferences saves/loads scores and settings
 - [ ] No `System.out.println` — use `Gdx.app.log`
@@ -694,6 +794,7 @@ If no reference games provided — build clean, minimal implementation matching 
 - [ ] GameOverScreen uses `playMusicOnce()` — game over music plays once and stops, never loops
 - [ ] SFX plays on button clicks, coin collect, jump, hit, game over
 - [ ] Music/SFX toggles in SettingsScreen actually pause/resume audio
+- [ ] `playMusic()` uses same-track guard — music does NOT restart when navigating between screens that share the same track
 - [ ] `PREF_MUSIC` and `PREF_SFX` saved to SharedPreferences
 - [ ] Package name updated from `com.factory.template` to `com.factory.GAME_SLUG`
 - [ ] `applicationId` in `android/build.gradle` updated to match package name
