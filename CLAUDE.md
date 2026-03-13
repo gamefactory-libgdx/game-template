@@ -27,7 +27,7 @@ project-root/
 ├── GDD.md
 ├── assets/                          ← all game assets go here
 │   ├── backgrounds/
-│   ├── fonts/                       ← Roboto-Regular.ttf, Orbitron-Regular.ttf (pre-copied)
+│   ├── fonts/                       ← Orbitron, Roboto (default) + PressStart2P, Kongtext, Xirod, Iomanoid, Vectroid, GaliverSans, Pixy, NoContinue
 │   ├── sounds/                      ← music + sfx .ogg files (pre-copied by pipeline)
 │   ├── ui/
 │   └── sprites/                     ← Kenney CC0 sprites (pre-copied by pipeline)
@@ -49,7 +49,8 @@ project-root/
 ```
 
 **IMPORTANT:** Replace `GAME_SLUG` with the actual game slug from GAME_SPEC.
-Example: if slug is `brick-smash`, package is `com.factory.bricksmash`
+Example: if slug is `brick-smash`, package is `com.asocity.bricksmash123456`
+(The 6-digit suffix is appended by the pipeline — use whatever packageName is in GAME_SPEC.)
 Java files go in: `core/src/main/java/com/factory/bricksmash/`
 
 ---
@@ -253,11 +254,40 @@ The pipeline pre-copies two TTF fonts into `assets/fonts/` before Claude runs.
 
 ### Available fonts
 
-| File | Use for |
-|------|---------|
-| `fonts/Roboto-Regular.ttf` | Body text, labels, button labels, HUD values |
-| `fonts/Orbitron-Regular.ttf` | Titles, score display, game-over headings |
+The pipeline pre-copies these fonts. The **default** pair is Orbitron (title) + Roboto (body) — always available.
+Additional fonts are available for creative variety — pick one pair per game.
 
+#### Default (always use unless you have a specific style reason)
+
+| File | Style | Use for |
+|------|-------|---------|
+| `fonts/Roboto-Regular.ttf` | Clean sans-serif | Body text, labels, button labels, HUD values |
+| `fonts/Orbitron-Regular.ttf` | Futuristic rounded | Titles, score display, game-over headings |
+
+#### Pixel / Retro (for retro/arcade/chiptune games)
+
+| File | Style | Use for |
+|------|-------|---------|
+| `fonts/PressStart2P.ttf` | Classic 8-bit pixel | Retro arcade titles, score display |
+| `fonts/Kongtext.ttf` | Bold pixel | Game over text, chunky labels |
+| `fonts/Pixy.ttf` | Small pixel | Compact HUD values, pixel-art games |
+| `fonts/NoContinue.ttf` | Pixel rounded | Menu buttons, casual arcade style |
+
+#### Sci-fi / Futuristic (for space, tech, racing games)
+
+| File | Style | Use for |
+|------|-------|---------|
+| `fonts/Xirod.otf` | Tech angular | Sci-fi titles, shooter HUD |
+| `fonts/Iomanoid.otf` | Tech outlined | Space game titles, tech UI |
+| `fonts/Vectroid.otf` | Vector retro | Space/neon game titles |
+
+#### Clean Display (for casual, sports, racing games)
+
+| File | Style | Use for |
+|------|-------|---------|
+| `fonts/GaliverSans.ttf` | Clean bold caps | Racing / sports titles |
+
+**Font selection rule:** Pick 2 fonts max per game — one for titles (larger), one for body/buttons (smaller).
 **NEVER load fonts from `assets/ui/` or any other directory — they are always in `assets/fonts/`.**
 
 ### Loading fonts — FreeTypeFontGenerator pattern
@@ -536,12 +566,12 @@ Create `android/src/main/java/com/factory/GAME_SLUG/android/AndroidLauncher.java
 (replace `GAME_SLUG` with the actual slug, dots removed — same as the package name).
 
 ```java
-package com.factory.GAME_SLUG.android;
+package com.asocity.GAME_SLUG.android;
 
 import android.os.Bundle;
 import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
-import com.factory.GAME_SLUG.MainGame;
+import com.asocity.GAME_SLUG.MainGame;
 
 public class AndroidLauncher extends AndroidApplication {
     @Override
@@ -555,7 +585,7 @@ public class AndroidLauncher extends AndroidApplication {
 ```
 
 The applicationId in `android/build.gradle` must match the package name exactly.
-Update it from `com.factory.template` to `com.factory.GAME_SLUG`.
+Set it to the `packageName` from GAME_SPEC (format: `com.asocity.{slug}{6digits}`).
 
 ---
 
@@ -729,12 +759,17 @@ public class Constants {
 ## 15. Build
 
 ```bash
+# Phase 1 — fix loop until debug passes:
 ./gradlew android:assembleDebug
+
+# Phase 2 — once debug is GREEN, run release bundle:
+./gradlew android:bundleRelease
 ```
 
 - Zero errors, zero warnings
 - Gradle wrapper only — never system gradle
 - Fix ALL errors before finishing
+- The `signingConfigs.release` block is already in `android/build.gradle` — do NOT modify it
 
 ---
 
@@ -771,6 +806,7 @@ If no reference games provided — build clean, minimal implementation matching 
 ## 18. Completion Checklist
 
 - [ ] `./gradlew android:assembleDebug` → BUILD SUCCESSFUL
+- [ ] `./gradlew android:bundleRelease` → BUILD SUCCESSFUL
 - [ ] Exactly 8-10 screens implemented
 - [ ] All screens in GAME_SPEC implemented
 - [ ] All screens navigate correctly per GAME_SPEC screen flow
@@ -796,8 +832,8 @@ If no reference games provided — build clean, minimal implementation matching 
 - [ ] Music/SFX toggles in SettingsScreen actually pause/resume audio
 - [ ] `playMusic()` uses same-track guard — music does NOT restart when navigating between screens that share the same track
 - [ ] `PREF_MUSIC` and `PREF_SFX` saved to SharedPreferences
-- [ ] Package name updated from `com.factory.template` to `com.factory.GAME_SLUG`
-- [ ] `applicationId` in `android/build.gradle` updated to match package name
+- [ ] Package name matches `packageName` from GAME_SPEC (`com.asocity.{slug}{6digits}`)
+- [ ] `applicationId` in `android/build.gradle` updated to match package name (com.asocity.*)
 - [ ] android/res/values/strings.xml app_name updated to game title
 - [ ] `assets/sprites/SPRITES.md` was read before writing game object code
 - [ ] Player, enemies, collectibles use sprites from `assets/sprites/` — no plain rectangles

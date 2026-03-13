@@ -43,10 +43,19 @@ android {
     targetCompatibility "17"
     coreLibraryDesugaringEnabled = true
   }
-  buildTypes {
+  signingConfigs {
     release {
-      minifyEnabled true
+      storeFile file('/home/kaliuzhnyi/asocity/factory.keystore')
+      storePassword 'factory123'
+      keyAlias 'factory'
+      keyPassword 'factory123'
+    }
+  }
+    buildTypes {
+    release {
+      minifyEnabled false
       proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+      signingConfig signingConfigs.release
     }
   }
 }
