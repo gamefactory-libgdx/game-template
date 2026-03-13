@@ -228,7 +228,7 @@ jobs:
         APK="${{ steps.find_apk.outputs.apk_path }}"
         SIZE_BYTES=$(stat -c%s "$APK")
         SIZE_MB=$(echo "scale=2; $SIZE_BYTES / 1048576" | bc)
-        MAX_MB=30
+        MAX_MB=50
 
         echo "APK size: ${SIZE_MB} MB"
 

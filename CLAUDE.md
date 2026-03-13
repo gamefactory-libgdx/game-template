@@ -605,12 +605,14 @@ public Music   currentMusic = null;
 ### Loading (in LoadingScreen or MainGame.create)
 
 ```java
-// Music — use Music class (streaming)
-manager.load("sounds/music/music_menu.ogg",           Music.class);
-manager.load("sounds/music/music_gameplay.ogg",       Music.class);
-manager.load("sounds/music/music_gameplay_alt.ogg",   Music.class);
-manager.load("sounds/music/music_gameplay_space.ogg", Music.class);
-manager.load("sounds/music/music_game_over.ogg",      Music.class);
+// Music — exactly 3 files per game (pre-selected by pipeline for this archetype):
+//   music_menu.ogg      — title/menu screen (loops)
+//   music_gameplay.ogg  — in-game music (loops); style varies by archetype
+//   music_game_over.ogg — game over jingle (plays once)
+// NEVER reference any other music filename — only these 3 exist.
+manager.load("sounds/music/music_menu.ogg",      Music.class);
+manager.load("sounds/music/music_gameplay.ogg",  Music.class);
+manager.load("sounds/music/music_game_over.ogg", Music.class);
 
 // SFX — use Sound class (buffered)
 manager.load("sounds/sfx/sfx_button_click.ogg",   Sound.class);
@@ -657,11 +659,8 @@ Usage per screen:
 // MainMenuScreen constructor:
 game.playMusic("sounds/music/music_menu.ogg");
 
-// GameScreen constructor — general (runners, puzzles, racing):
+// GameScreen constructor (all archetypes — always use music_gameplay.ogg):
 game.playMusic("sounds/music/music_gameplay.ogg");
-
-// GameScreen constructor — space shooter games:
-game.playMusic("sounds/music/music_gameplay_space.ogg");
 
 // GameOverScreen constructor — plays ONCE, does NOT loop:
 game.playMusicOnce("sounds/music/music_game_over.ogg");
@@ -826,7 +825,7 @@ If no reference games provided — build clean, minimal implementation matching 
 - [ ] No `System.out.println` — use `Gdx.app.log`
 - [ ] `dispose()` on every screen
 - [ ] Background music plays on every screen (menu, gameplay, game over)
-- [ ] GameScreen uses `music_gameplay_space.ogg` for space shooter games, `music_gameplay.ogg` for all others
+- [ ] GameScreen uses `sounds/music/music_gameplay.ogg` (always — the pipeline selects the right track for this archetype)
 - [ ] GameOverScreen uses `playMusicOnce()` — game over music plays once and stops, never loops
 - [ ] SFX plays on button clicks, coin collect, jump, hit, game over
 - [ ] Music/SFX toggles in SettingsScreen actually pause/resume audio
