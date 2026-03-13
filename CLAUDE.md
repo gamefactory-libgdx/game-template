@@ -123,16 +123,29 @@ is also written there, listing every available file.
 4. Never use plain `TextButton` — always apply a button style using Kenney button PNGs
 
 ### Categories available
-| Category | Sprites | Use for |
-|----------|---------|---------|
-| `runner/` | player walk/jump/hurt, enemies (slime, fly, bee, saw), obstacles (spike, rock, lava), ground tiles | Side-scrollers, runners, jetpack, flappy-style |
-| `space/`  | player ships, enemy ships (4 types), lasers, asteroids | Space shooters, asteroid dodge |
-| `racing/` | car_player (yellow), car_red, car_blue, car_green, car_black | Top-down car games |
-| `puzzle/` | balls (blue/yellow/grey), paddles, back tiles | Brick breaker, ball games |
-| `slingshot/` | wood/stone/metal/glass blocks (square/plank/column), alien targets, debris, star ratings | Angry Birds-style slingshot, physics destruction |
+| Category | Key sprites | Use for |
+|---|---|---|
+| `balloon/` | balloon_green_*.png (5 files) | Balloon-pop games |
+| `board-icons/` | board_icon_NNN.png (255 icons) | Memory-match cards, board-game tokens |
+| `characters/` | 417 files — 6 toon types + 4 platformer types, each with idle/walk/run/jump/hurt | Player characters in platformers, runners, maze games |
+| `enemies/` | alien_head_green_f1-3, dragon_head_orange_f1-4, enemy_gem_capsule_winged_f1-2, strip sheets (12 files) | Enemy characters in any game |
+| `fish/` | fish species, hooks, rods (126 files) | Fishing-arcade |
+| `generic/` | coin_gold, coin_silver, star, gem (4 colors) | Collectibles in any game |
 | `jumper/` | bunny player (2 skins), platforms (5 types + broken), flying/spike enemies, spring/jetpack items | Doodle Jump-style infinite vertical jumper |
-| `generic/`| coin_gold, coin_silver, star, gem (4 colors) | Collectibles in any game |
-| `ui/`     | buttons (5 colours × up/down), round icon buttons, slider, 21 HUD icons (incl. heart, timer) | **Every screen** — all buttons, HUD icons, settings sliders |
+| `orbs/` | orb_red/blue/green/yellow/purple/orange + bubble (35 files) | Bubble-shooter, match-3, orbit-dash |
+| `physics/` | blocks, crates, discs, bombs, pins, balls (337 files) | Slingshot, pinball, plinko, breakout |
+| `plane/` | planeBlue/Red/Yellow (3 frames each), pipes, background, ground (13 files) | Flappy-bird, glide-runner |
+| `puzzle/` | balls (blue/yellow/grey), paddles, back tiles | Brick breaker, ball games |
+| `racing/` | car_player (yellow), car_red, car_blue, car_green, car_black | Top-down car games |
+| `roguelike/` | 161 dungeon tiles (16×16 px) — walls, floors, doors, chests, enemies | Roguelike, maze-runner, dungeon-crawler |
+| `runner/` | player walk/jump/hurt, enemies (slime, fly, bee, saw), obstacles (spike, rock, lava), ground tiles | Side-scrollers, runners, jetpack, flappy-style |
+| `slingshot/` | wood/stone/metal/glass blocks (square/plank/column), alien targets, debris, star ratings | Angry Birds-style slingshot, physics destruction |
+| `snake/` | snake head/body/tail/turns (4 directions each) + apple (17 files) | Snake |
+| `space/` | 115 clean named files — player ships, enemy ships, deathstars, lasers, bullets, asteroids, explosions | Space shooters, asteroid-miner, meteor-defense |
+| `stack/` | stack_ring_green_*.png (8 files) | Stack / ring-toss games |
+| `tower-defense/` | 300 tiles (64×64 px) — terrain, towers, enemies, projectiles | Tower-defense, meteor-defense |
+| `ui/` | buttons (5 colours × up/down), round icon buttons, slider, HUD icons (heart, timer, coin, star…) | **Every screen** — all buttons, HUD icons, settings sliders |
+| `ui-pixel/` | 129 pixel-style panels, buttons, icons, bars | Retro/pixel-art UI |
 
 ### Loading sprites with AssetManager
 
