@@ -1,139 +1,186 @@
 # SOUNDS.md — Audio Library (CC0)
 
-All sounds are pre-copied to `assets/sounds/` by the pipeline.
-Load them via `AssetManager` — never use `new Sound()` or `new Music()` directly.
+All tracks are CC0 (public domain). No attribution required.
 
 ---
 
-## Music tracks — `assets/sounds/music/`
+## MUSIC — 46 tracks in `sounds/music/`
 
-### Core tracks (always copied to every project)
+### Original Junkala Pack (chiptune)
+| File | Mood | Best for |
+|------|------|----------|
+| music_title.ogg | Upbeat chiptune title | Main menu, any game |
+| music_level1.ogg | Driving chiptune | Gameplay — levels 1-2 |
+| music_level2.ogg | Mid-energy chiptune | Gameplay — levels 3-4 |
+| music_level3.ogg | Intense chiptune | Gameplay — boss/hard levels |
+| music_ending.ogg | Triumphant chiptune | Victory/credits |
 
-| File | Style | Use for |
-|------|-------|---------|
-| `sounds/music/music_menu.ogg` | Chiptune 8-bit | Main menu, leaderboard, settings |
-| `sounds/music/music_gameplay.ogg` | Chiptune 8-bit | In-game loop (runners, puzzles, general) |
-| `sounds/music/music_gameplay_alt.ogg` | Chiptune 8-bit | Tension / boss fights / alternate gameplay |
-| `sounds/music/music_gameplay_space.ogg` | Ambient electronic | Space shooters, sci-fi games |
-| `sounds/music/music_game_over.ogg` | Chiptune sting | Game over screen — plays ONCE, no loop |
+### Legacy named tracks
+| File | Mood | Best for |
+|------|------|----------|
+| music_menu.ogg | Chill menu loop | Main menu |
+| music_gameplay.ogg | Action loop | Generic gameplay |
+| music_gameplay_alt.ogg | Alt action loop | Gameplay variety |
+| music_gameplay_space.ogg | Space/electronic | Space shooters |
+| music_game_over.ogg | Sad/tense | Game over screen |
+| music_ambient.ogg | Ambient electronic | Loading / ambient screens |
 
-### Junkala Retro Pack (Juhani Junkala, CC0)
+### RPG Chiptunes — 15 Melodic RPG (CC0)
+| File | Mood | Best for |
+|------|------|----------|
+| music_rpg_title.ogg | Grand chiptune intro | Main menu, title screen |
+| music_rpg_bittersweet.ogg | Emotional, melancholic | Story/cutscene moment |
+| music_rpg_town.ogg | Cheerful, cozy | Casual gameplay, shop |
+| music_rpg_royal.ogg | Stately, regal | High score / leaderboard |
+| music_rpg_pavane.ogg | Graceful, medieval | Puzzle, calm gameplay |
+| music_rpg_dungeon.ogg | Dark, mysterious | Maze, dungeon, horror |
+| music_rpg_shrine.ogg | Ethereal, mystical | Bonus levels, secret areas |
+| music_rpg_castle.ogg | Epic, majestic | Intense gameplay, climax |
+| music_rpg_rain.ogg | Melancholic, rainy | Game over, sad moment |
+| music_rpg_fairy.ogg | Magical, light | Casual/children games |
+| music_rpg_airship.ogg | Adventure, flying | Runner, glider, flying games |
+| music_rpg_evil.ogg | Sinister, tense | Boss fight, danger |
+| music_rpg_battle1.ogg | Energetic battle | Action gameplay, combat |
+| music_rpg_battle2.ogg | Intense battle | Boss battle, final level |
+| music_rpg_gameover.ogg | Defeat jingle | Game over screen |
 
-| File | Style | Use for |
-|------|-------|---------|
-| `sounds/music/music_title.ogg` | Chiptune 8-bit energetic | Title screen / main menu variant |
-| `sounds/music/music_level1.ogg` | Chiptune 8-bit upbeat | Level 1 / easy stages / casual gameplay |
-| `sounds/music/music_level2.ogg` | Chiptune 8-bit driving | Level 2 / medium stages |
-| `sounds/music/music_level3.ogg` | Chiptune 8-bit intense | Level 3 / hard stages / boss fights |
-| `sounds/music/music_ending.ogg` | Chiptune triumphant | Win screen / credits / completion |
+### Modern Chiptune Pack — 10 tracks (CC0)
+| File | Mood | Best for |
+|------|------|----------|
+| music_chip_phantom_party.ogg | Mysterious, groovy | Unusual/quirky games |
+| music_chip_wanderlust.ogg | Whimsical, adventurous | Exploration, runner |
+| music_chip_wanderer.ogg | Calm wandering | Maze runner, puzzle |
+| music_chip_hearts_parade.ogg | Cute, bubbly | Casual/love-themed games |
+| music_chip_pixel_prowler.ogg | Sneaky, tense | Stealth, dodger games |
+| music_chip_paradise.ogg | Bright, happy | Casual flappy/bounce games |
+| music_chip_pixel_paradise.ogg | Upbeat pixel | Arcade, casual games |
+| music_chip_running_happy.ogg | Fast, energetic | Endless runner, speedrun |
+| music_chip_dark_forest.ogg | Dark, eerie | Horror, dark dungeon |
+| music_chip_walk_woods.ogg | Peaceful, exploring | Idle, calm gameplay |
 
-### Ambient / Electronic
+### NES Shooter — 5 tracks (CC0)
+| File | Mood | Best for |
+|------|------|----------|
+| music_nes_map.ogg | Strategic, calm | Map screen, menu |
+| music_nes_mars.ogg | Energetic space | Space shooter gameplay |
+| music_nes_mercury.ogg | Upbeat space | Fast-paced action |
+| music_nes_venus.ogg | Mellow space | Slower space/puzzle |
+| music_nes_boss.ogg | Epic boss | Boss fight, climax |
 
-| File | Style | Use for |
-|------|-------|---------|
-| `sounds/music/music_ambient.ogg` | Ambient electronic | Space / atmospheric / exploration games |
+### Puzzle / Calm — 2 tracks (CC0, MintoDog)
+| File | Mood | Best for |
+|------|------|----------|
+| music_puzzle_cozy1.ogg | Bossa nova, saxophone | Puzzle, memory match, sliding |
+| music_puzzle_cozy2.ogg | Brass/piano/synth | Puzzle gameplay, cozy games |
+
+### Ambient / Relaxing — 2 tracks (CC0)
+| File | Mood | Best for |
+|------|------|----------|
+| music_ambient_relax.ogg | Soft synth loop | Fishing, glider, calm games |
+| music_ambient.ogg | Electronic ambient | Space ambient, menus |
+
+### Racing / Electronic — 2 tracks (CC0)
+| File | Mood | Best for |
+|------|------|----------|
+| music_racing_hyperflight.ogg | Fast, driving, electronic | Racing, lane runner, metro dash |
+| music_space_synthwave.ogg | 80s synth wave | Space shooter, sci-fi, orbit dash |
 
 ---
 
-## Sound effects — `assets/sounds/sfx/`
+## GENRE → MUSIC PICK GUIDE
 
-### Core UI / Navigation
+| Archetype | Recommended tracks |
+|-----------|-------------------|
+| doodle-jump / flappy-bird / endless-runner | music_chip_paradise.ogg, music_chip_running_happy.ogg, music_level1.ogg |
+| space-shooter / asteroid-miner / laser-dodge | music_gameplay_space.ogg, music_space_synthwave.ogg, music_nes_mars.ogg |
+| snake / breakout / pong / minesweeper | music_chip_pixel_prowler.ogg, music_nes_mercury.ogg, music_level2.ogg |
+| top-down-racer / lane-runner / metro-dash | music_racing_hyperflight.ogg, music_chip_running_happy.ogg |
+| fishing-arcade / glide-runner / paper-glide | music_ambient_relax.ogg, music_chip_walk_woods.ogg, music_rpg_fairy.ogg |
+| puzzle games (memory, sliding, pinball) | music_puzzle_cozy1.ogg, music_puzzle_cozy2.ogg, music_rpg_pavane.ogg |
+| maze-runner / platform-escape / temple-escape | music_rpg_dungeon.ogg, music_chip_wanderlust.ogg, music_rpg_airship.ogg |
+| dungeon-keys / 2048-merge / roguelike | music_rpg_evil.ogg, music_rpg_dungeon.ogg, music_chip_dark_forest.ogg |
+| generic gameplay (fallback) | music_gameplay.ogg, music_level1.ogg |
+| game over (all games) | music_rpg_gameover.ogg, music_game_over.ogg |
+| main menu (all games) | music_title.ogg, music_menu.ogg, music_rpg_title.ogg |
 
-| File | Use for |
-|------|---------|
-| `sounds/sfx/sfx_button_click.ogg` | Any button press (Play, Retry, Buy, etc.) |
-| `sounds/sfx/sfx_button_back.ogg` | Back / cancel / close buttons |
-| `sounds/sfx/sfx_toggle.ogg` | Settings toggles (music on/off, sfx on/off) |
-| `sounds/sfx/sfx_error.ogg` | Not enough coins / invalid action |
-| `sounds/sfx/sfx_confirm.ogg` | Confirm / purchase / unlock |
-| `sounds/sfx/sfx_close.ogg` | Close dialog / panel |
-| `sounds/sfx/sfx_select.ogg` | Select option / highlight item |
-| `sounds/sfx/sfx_toggle_alt.ogg` | Alternative toggle (different tone) |
-| `sounds/sfx/sfx_switch.ogg` | Switch mode / tab |
-| `sounds/sfx/sfx_tick.ogg` | Timer tick / countdown |
-| `sounds/sfx/sfx_pluck.ogg` | Light tap / selection pop |
-| `sounds/sfx/sfx_bong.ogg` | Notification / achievement pop |
+---
+
+## SFX — in `sounds/sfx/`
+
+### UI / Navigation
+| File | Use |
+|------|-----|
+| sfx_click.ogg | Button press |
+| sfx_back.ogg | Back navigation |
+| sfx_confirm.ogg | Confirm/accept |
+| sfx_close.ogg | Close/dismiss |
+| sfx_select.ogg | Item selection |
+| sfx_toggle_alt.ogg | Toggle switch |
+| sfx_switch.ogg | Tab/mode switch |
+| sfx_tick.ogg | Checkbox tick |
 
 ### Gameplay
+| File | Use |
+|------|-----|
+| sfx_jump.ogg | Jump |
+| sfx_coin.ogg | Coin collect |
+| sfx_powerup.ogg | Power-up collect |
+| sfx_powerup_alt.ogg | Alt power-up |
+| sfx_powerup_alt2.ogg | Second alt power-up |
+| sfx_hit.ogg | Damage / hit |
+| sfx_explosion.ogg | Explosion |
+| sfx_game_over.ogg | Game over trigger |
+| sfx_win.ogg | Level win |
+| sfx_pluck.ogg | Light collect / pick |
+| sfx_bong.ogg | Block hit / bounce |
+| sfx_high_up.ogg | Score milestone up |
+| sfx_high_down.ogg | Score milestone down |
 
-| File | Use for |
-|------|---------|
-| `sounds/sfx/sfx_coin.ogg` | Coin / gem / star collected |
-| `sounds/sfx/sfx_jump.ogg` | Player jump / thrust / launch |
-| `sounds/sfx/sfx_hit.ogg` | Player hit by obstacle / enemy |
-| `sounds/sfx/sfx_game_over.ogg` | Game over event |
-| `sounds/sfx/sfx_level_complete.ogg` | Level complete / high score |
-| `sounds/sfx/sfx_power_up.ogg` | Power-up collected / activated |
-| `sounds/sfx/sfx_powerup_alt.ogg` | Power-up variant (chiptune style) |
-| `sounds/sfx/sfx_powerup_alt2.ogg` | Power-up variant 2 |
+### Projectile / Energy
+| File | Use |
+|------|-----|
+| sfx_shoot.ogg | Generic shoot |
+| sfx_laser.ogg | Laser fire |
+| sfx_laser2.ogg | Alt laser |
+| sfx_zap.ogg | Electric zap |
+| sfx_phase_jump.ogg | Warp / phase jump |
+| sfx_phaser_up.ogg | Charge up |
+| sfx_phaser_down.ogg | Charge down |
 
-### Space / Sci-fi
+### Snake-specific
+| File | Use |
+|------|-----|
+| sfx_snake_eat.ogg | Food collect |
+| sfx_snake_die.ogg | Snake collision / death |
 
-| File | Use for |
-|------|---------|
-| `sounds/sfx/sfx_shoot.ogg` | Laser / projectile fired (classic) |
-| `sounds/sfx/sfx_laser.ogg` | Laser fire variant 1 |
-| `sounds/sfx/sfx_laser2.ogg` | Laser fire variant 2 |
-| `sounds/sfx/sfx_zap.ogg` | Zap / electric hit |
-| `sounds/sfx/sfx_phase_jump.ogg` | Phase jump / teleport |
-| `sounds/sfx/sfx_phaser_up.ogg` | Phaser charge up / power increase |
-| `sounds/sfx/sfx_phaser_down.ogg` | Phaser wind down / power decrease |
-| `sounds/sfx/sfx_high_up.ogg` | Pitch rising (collect, level up) |
-| `sounds/sfx/sfx_high_down.ogg` | Pitch falling (lose life, fail) |
+### Jingles (short, one-shot)
+| File | Use |
+|------|-----|
+| sfx_jingle_warp.ogg | Warp / teleport |
+| sfx_jingle_win.ogg | Win / success |
+| sfx_jingle_intro.ogg | Game start / intro |
 
 ---
 
-## Loading in MainGame
+## Usage in Java (AssetManager + libGDX)
 
 ```java
-// Music (streaming — do NOT use Sound for music)
-// Load only the tracks your game actually uses:
-manager.load("sounds/music/music_menu.ogg",           Music.class);
-manager.load("sounds/music/music_gameplay.ogg",       Music.class);
-manager.load("sounds/music/music_gameplay_alt.ogg",   Music.class);
-manager.load("sounds/music/music_gameplay_space.ogg", Music.class);
-manager.load("sounds/music/music_game_over.ogg",      Music.class);
-// Optional extra tracks:
-// manager.load("sounds/music/music_title.ogg",      Music.class);
-// manager.load("sounds/music/music_level1.ogg",     Music.class);
-// manager.load("sounds/music/music_level2.ogg",     Music.class);
-// manager.load("sounds/music/music_level3.ogg",     Music.class);
-// manager.load("sounds/music/music_ending.ogg",     Music.class);
-// manager.load("sounds/music/music_ambient.ogg",    Music.class);
+// Load
+manager.load("sounds/music/music_chip_running_happy.ogg", Music.class);
+manager.load("sounds/sfx/sfx_coin.ogg", Sound.class);
 
-// Core SFX (always load these)
-manager.load("sounds/sfx/sfx_button_click.ogg", Sound.class);
-manager.load("sounds/sfx/sfx_button_back.ogg",  Sound.class);
-manager.load("sounds/sfx/sfx_toggle.ogg",       Sound.class);
-manager.load("sounds/sfx/sfx_coin.ogg",         Sound.class);
-manager.load("sounds/sfx/sfx_jump.ogg",         Sound.class);
-manager.load("sounds/sfx/sfx_hit.ogg",          Sound.class);
-manager.load("sounds/sfx/sfx_game_over.ogg",    Sound.class);
-manager.load("sounds/sfx/sfx_level_complete.ogg", Sound.class);
-manager.load("sounds/sfx/sfx_power_up.ogg",     Sound.class);
-manager.load("sounds/sfx/sfx_shoot.ogg",        Sound.class);
-manager.load("sounds/sfx/sfx_error.ogg",        Sound.class);
+// Play looping music
+Music music = manager.get("sounds/music/music_chip_running_happy.ogg", Music.class);
+music.setLooping(true);
+music.setVolume(0.7f);
+music.play();
+
+// Play one-shot SFX
+Sound coin = manager.get("sounds/sfx/sfx_coin.ogg", Sound.class);
+coin.play(1.0f);
 ```
 
-## Playing sounds
-
+Music restart guard (in screen show()):
 ```java
-// Background music (looping) — menu, gameplay
-Music menuMusic = game.manager.get("sounds/music/music_menu.ogg", Music.class);
-menuMusic.setLooping(true);
-menuMusic.setVolume(0.7f);
-if (game.musicEnabled) menuMusic.play();
-
-// Game over music — plays ONCE, no loop
-Music gameOverMusic = game.manager.get("sounds/music/music_game_over.ogg", Music.class);
-gameOverMusic.setLooping(false);
-gameOverMusic.setVolume(0.7f);
-if (game.musicEnabled) gameOverMusic.play();
-
-// Stop previous music before starting new
-if (menuMusic.isPlaying()) menuMusic.stop();
-
-// SFX
-Sound clickSfx = game.manager.get("sounds/sfx/sfx_button_click.ogg", Sound.class);
-if (game.sfxEnabled) clickSfx.play(1.0f);
+if (!music.isPlaying()) music.play();
 ```
