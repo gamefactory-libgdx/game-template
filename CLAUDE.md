@@ -27,7 +27,7 @@ project-root/
 ├── GDD.md
 ├── assets/                          ← all game assets go here
 │   ├── backgrounds/
-│   ├── fonts/                       ← Orbitron, Roboto (default) + PressStart2P, Kongtext, Xirod, Iomanoid, Vectroid, GaliverSans, Pixy, NoContinue
+│   ├── fonts/                       ← Roboto-Regular.ttf (fallback) + 2 game-specific fonts pre-copied by pipeline
 │   ├── sounds/                      ← music + sfx .ogg files (pre-copied by pipeline)
 │   ├── ui/
 │   └── sprites/                     ← Kenney CC0 sprites (pre-copied by pipeline)
@@ -265,42 +265,20 @@ manager.load("sprites/icon_timer.png", Texture.class);
 
 The pipeline pre-copies two TTF fonts into `assets/fonts/` before Claude runs.
 
-### Available fonts
+### Assigned fonts — READ THIS FIRST
 
-The pipeline pre-copies these fonts. The **default** pair is Orbitron (title) + Roboto (body) — always available.
-Additional fonts are available for creative variety — pick one pair per game.
+> **The pipeline has already selected the two fonts for YOUR game.**
+> Look at the **ASSIGNED FONTS** section in the task prompt you received.
+> It looks like this:
+> ```
+> ## ASSIGNED FONTS (use ONLY these two — do not use any other font)
+>   Title font:  assets/fonts/SomeTitleFont.ttf
+>   Body font:   assets/fonts/SomeBodyFont.ttf
+> ```
+> **Use exactly those two filenames. Do not substitute Orbitron or Roboto.**
+> `Roboto-Regular.ttf` is also present as a UI fallback, but only use it if it is
+> explicitly listed as your body font.
 
-#### Default (always use unless you have a specific style reason)
-
-| File | Style | Use for |
-|------|-------|---------|
-| `fonts/Roboto-Regular.ttf` | Clean sans-serif | Body text, labels, button labels, HUD values |
-| `fonts/Orbitron-Regular.ttf` | Futuristic rounded | Titles, score display, game-over headings |
-
-#### Pixel / Retro (for retro/arcade/chiptune games)
-
-| File | Style | Use for |
-|------|-------|---------|
-| `fonts/PressStart2P.ttf` | Classic 8-bit pixel | Retro arcade titles, score display |
-| `fonts/Kongtext.ttf` | Bold pixel | Game over text, chunky labels |
-| `fonts/Pixy.ttf` | Small pixel | Compact HUD values, pixel-art games |
-| `fonts/NoContinue.ttf` | Pixel rounded | Menu buttons, casual arcade style |
-
-#### Sci-fi / Futuristic (for space, tech, racing games)
-
-| File | Style | Use for |
-|------|-------|---------|
-| `fonts/Xirod.otf` | Tech angular | Sci-fi titles, shooter HUD |
-| `fonts/Iomanoid.otf` | Tech outlined | Space game titles, tech UI |
-| `fonts/Vectroid.otf` | Vector retro | Space/neon game titles |
-
-#### Clean Display (for casual, sports, racing games)
-
-| File | Style | Use for |
-|------|-------|---------|
-| `fonts/GaliverSans.ttf` | Clean bold caps | Racing / sports titles |
-
-**Font selection rule:** Pick 2 fonts max per game — one for titles (larger), one for body/buttons (smaller).
 **NEVER load fonts from `assets/ui/` or any other directory — they are always in `assets/fonts/`.**
 
 ### Loading fonts — FreeTypeFontGenerator pattern
@@ -310,12 +288,14 @@ Do this once in `MainGame.create()` and store the results as public fields so al
 
 ```java
 // In MainGame — public fields
-public BitmapFont fontBody;   // Roboto — labels, buttons, HUD
-public BitmapFont fontTitle;  // Orbitron — titles, scores
+public BitmapFont fontBody;   // body/buttons — filename from ASSIGNED FONTS (Body font)
+public BitmapFont fontTitle;  // titles/scores — filename from ASSIGNED FONTS (Title font)
 
 // In MainGame.create() — generate fonts BEFORE loading other assets
-FreeTypeFontGenerator bodyGen  = new FreeTypeFontGenerator(Gdx.files.internal("fonts/Roboto-Regular.ttf"));
-FreeTypeFontGenerator titleGen = new FreeTypeFontGenerator(Gdx.files.internal("fonts/Orbitron-Regular.ttf"));
+// ⚠️  Replace YOUR_BODY_FONT and YOUR_TITLE_FONT with the exact filenames
+//     given in "ASSIGNED FONTS" in your task prompt (e.g. "DPComic.ttf", "YosterIsland.ttf")
+FreeTypeFontGenerator bodyGen  = new FreeTypeFontGenerator(Gdx.files.internal("fonts/YOUR_BODY_FONT"));
+FreeTypeFontGenerator titleGen = new FreeTypeFontGenerator(Gdx.files.internal("fonts/YOUR_TITLE_FONT"));
 
 FreeTypeFontGenerator.FreeTypeFontParameter param = new FreeTypeFontGenerator.FreeTypeFontParameter();
 
@@ -831,7 +811,7 @@ If no reference games provided — build clean, minimal implementation matching 
 - [ ] All assets in GAME_SPEC exist in `assets/`
 - [ ] All assets loaded via AssetManager — zero `new Texture()` calls
 - [ ] Fonts loaded from `assets/fonts/` — never from `assets/ui/` or anywhere else
-- [ ] `game.fontBody` (Roboto) and `game.fontTitle` (Orbitron) generated in `MainGame.create()`
+- [ ] `game.fontBody` and `game.fontTitle` generated in `MainGame.create()` using the ASSIGNED FONTS filenames
 - [ ] Button styles use `game.fontBody` — never `skin.getFont()`
 - [ ] `Constants.java` has WORLD_WIDTH, WORLD_HEIGHT and all magic numbers
 - [ ] SharedPreferences saves/loads scores and settings
