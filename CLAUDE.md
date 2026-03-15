@@ -504,9 +504,59 @@ retryButton.addListener(new ChangeListener() {
 ```
 
 ### Pause screen — MANDATORY
+
 - Every game screen must have a visible pause button during gameplay
-- Pause must freeze all game logic (delta time ignored while paused)
 - Pause screen must have: Resume, Restart, Main Menu buttons
+- Navigate to a separate `PauseScreen(game, this)` — pass the current screen instance
+
+#### CRITICAL BUG — Pause button stops working after first use
+
+This is the #1 most common bug. Root cause: when returning from PauseScreen, LibGDX calls
+`gameScreen.show()`, but if `show()` does not re-register the input processor, the Stage stops
+receiving touch events and the pause button silently does nothing on subsequent presses.
+
+**Fix 1 — always re-register input in `show()`:**
+```java
+@Override
+public void show() {
+    Gdx.input.setInputProcessor(new InputMultiplexer(stage, new InputAdapter() {
+        @Override public boolean keyDown(int keycode) {
+            if (keycode == Input.Keys.BACK) { game.setScreen(new MainMenuScreen(game)); return true; }
+            return false;
+        }
+    }));
+}
+```
+
+**Fix 2 — if you use an in-screen pause overlay (paused boolean), NEVER gate `stage.act()`:**
+```java
+@Override
+public void render(float delta) {
+    if (!paused) {
+        update(delta);          // game logic only — skip when paused
+    }
+    stage.act(delta);           // ALWAYS — so pause/resume buttons fire even when paused
+    Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+    // ... draw ...
+    stage.draw();
+}
+```
+The mistake `if (!paused) { stage.act(delta); update(delta); }` means stage buttons never fire
+while paused — resume button does nothing, pause button does nothing after first press.
+
+**Fix 3 — PauseScreen resume button must go back to the original instance:**
+```java
+// PauseScreen constructor receives the game screen
+public PauseScreen(MainGame game, Screen previousScreen) {
+    this.previousScreen = previousScreen;
+}
+// Resume button:
+resumeButton.addListener(new ChangeListener() {
+    public void changed(ChangeEvent event, Actor actor) {
+        game.setScreen(previousScreen); // same instance — calls previousScreen.show()
+    }
+});
+```
 
 ---
 
