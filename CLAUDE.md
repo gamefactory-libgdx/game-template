@@ -113,11 +113,11 @@ boolean thrusting = Gdx.input.isTouched();
 
 ### How sprites work
 The pipeline automatically copies a curated Kenney CC0 sprite library into
-`assets/sprites/` before Claude runs. A manifest `assets/sprites/SPRITES.md`
+`assets/sprites/` before Claude runs. A manifest `assets/ASSETS_MANIFEST.json`
 is also written there, listing every available file.
 
 **Before writing ANY game object code:**
-1. Read `assets/sprites/SPRITES.md` — it is always present
+1. Read `assets/ASSETS_MANIFEST.json` — it is always present
 2. Use the sprites listed there for player, enemies, obstacles, collectibles **and all UI**
 3. Never use plain colored rectangles for game objects when sprites are available
 4. Never use plain `TextButton` — always apply a button style using Kenney button PNGs
@@ -197,21 +197,21 @@ private TextButton.TextButtonStyle makeButtonStyle(String upFile, String downFil
 
 // Primary action (Play, Start, Continue):
 TextButton playBtn = new TextButton("PLAY",
-    makeButtonStyle("sprites/button_blue.png", "sprites/button_blue_pressed.png"));
+    makeButtonStyle("sprites/ui/button_blue.png", "sprites/ui/button_blue_pressed.png"));
 playBtn.setSize(240, 70);
 
 // Secondary / Back / Menu:
 TextButton backBtn = new TextButton("BACK",
-    makeButtonStyle("sprites/button_grey.png", "sprites/button_grey_pressed.png"));
+    makeButtonStyle("sprites/ui/button_grey.png", "sprites/ui/button_grey_pressed.png"));
 backBtn.setSize(200, 60);
 
 // Buy / Confirm in ShopScreen:
 TextButton buyBtn = new TextButton("BUY",
-    makeButtonStyle("sprites/button_green.png", "sprites/button_green_pressed.png"));
+    makeButtonStyle("sprites/ui/button_green.png", "sprites/ui/button_green_pressed.png"));
 
 // Retry / Danger:
 TextButton retryBtn = new TextButton("RETRY",
-    makeButtonStyle("sprites/button_red.png", "sprites/button_red_pressed.png"));
+    makeButtonStyle("sprites/ui/button_red.png", "sprites/ui/button_red_pressed.png"));
 ```
 
 Standard button sizes: main 240×70 · secondary 200×60 · round icon 60×60
@@ -220,21 +220,24 @@ Standard button sizes: main 240×70 · secondary 200×60 · round icon 60×60
 ```java
 // Music toggle button using icon sprites:
 ImageButton musicBtn = new ImageButton(
-    new TextureRegionDrawable(manager.get("sprites/icon_music_on.png",  Texture.class)),
-    new TextureRegionDrawable(manager.get("sprites/icon_music_off.png", Texture.class))
+    new TextureRegionDrawable(manager.get("sprites/ui/icon_music_on.png",  Texture.class)),
+    new TextureRegionDrawable(manager.get("sprites/ui/icon_music_off.png", Texture.class))
 );
 musicBtn.setChecked(!musicEnabled); // checked state = off icon shown
 ```
 
 ### HUD icons — MANDATORY source
-All HUD icons (hearts, timer, star, settings gear, etc.) **must** come from `assets/sprites/`.
+**⛔ Never reference a sprite path without checking `assets/ASSETS_MANIFEST.json` first.**
+Only use directories that appear in the manifest. `assets/sprites/ui/` is always present.
+
+All HUD icons (hearts, timer, star, settings gear, etc.) **must** come from `assets/sprites/ui/`.
 **Never** create an `assets/icons/` folder — it is redundant and will be ignored.
 
 | HUD need | Use this sprite |
 |----------|----------------|
-| Life / health indicator | `sprites/icon_heart.png` / `sprites/icon_heart_empty.png` |
-| Timer / countdown | `sprites/icon_timer.png` |
-| Star / rating | `sprites/icon_star.png` |
+| Life / health indicator | `sprites/ui/icon_heart.png` / `sprites/ui/icon_heart_empty.png` |
+| Timer / countdown | `sprites/ui/icon_timer.png` |
+| Star / rating | `sprites/ui/icon_star.png` |
 | Settings gear | `sprites/icon_settings.png` |
 | Lock / unlock | `sprites/icon_locked.png` / `sprites/icon_unlocked.png` |
 | Leaderboard | `sprites/icon_leaderboard.png` |
@@ -275,11 +278,14 @@ The pipeline pre-copies two TTF fonts into `assets/fonts/` before Claude runs.
 >   Title font:  assets/fonts/SomeTitleFont.ttf
 >   Body font:   assets/fonts/SomeBodyFont.ttf
 > ```
-> **Use exactly those two filenames. Do not substitute Orbitron or Roboto.**
+> **Copy those filenames character-for-character. Never invent or guess a font name.**
 > `Roboto-Regular.ttf` is also present as a UI fallback, but only use it if it is
 > explicitly listed as your body font.
 
 **NEVER load fonts from `assets/ui/` or any other directory — they are always in `assets/fonts/`.**
+
+> **⛔ Wrong font filename = fatal crash.** If unsure which fonts exist, run `ls assets/fonts/` first.
+> Never invent names like `Nunito-Bold.ttf` or `Poppins-Bold.ttf`. Use ONLY filenames from ASSIGNED FONTS.
 
 ### Loading fonts — FreeTypeFontGenerator pattern
 
@@ -877,7 +883,7 @@ If no reference games provided — build clean, minimal implementation matching 
 - [ ] Package name matches `packageName` from GAME_SPEC (`com.asocity.{slug}{6digits}`)
 - [ ] `applicationId` in `android/build.gradle` updated to match package name (com.asocity.*)
 - [ ] android/res/values/strings.xml app_name updated to game title
-- [ ] `assets/sprites/SPRITES.md` was read before writing game object code
+- [ ] `assets/ASSETS_MANIFEST.json` was read before writing game object code
 - [ ] Player, enemies, collectibles use sprites from `assets/sprites/` — no plain rectangles
 - [ ] All buttons use Kenney button PNGs (`button_blue.png` etc.) — no unstyled `TextButton`
 - [ ] Every button has BOTH `up` (depth shadow) and `down` (flat) drawable set
