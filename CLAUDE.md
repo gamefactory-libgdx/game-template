@@ -30,8 +30,8 @@ project-root/
 │   ├── fonts/                       ← Roboto-Regular.ttf (fallback) + 2 game-specific fonts pre-copied by pipeline
 │   ├── sounds/                      ← music + sfx .ogg files (pre-copied by pipeline)
 │   ├── ui/
-│   └── sprites/                     ← Kenney CC0 sprites (pre-copied by pipeline)
-│       └── SPRITES.md               ← manifest — READ THIS before using any sprite
+│   └── sprites/                     ← curated pixel-art sprite packs (craftpix, pre-copied by pipeline)
+│       └── (subdirs: character/ tileset/ enemy/ vehicle/ object/ ui/)
 ├── core/
 │   └── src/main/java/com/factory/GAME_SLUG/
 │       ├── MainGame.java            ← extends Game
@@ -112,53 +112,44 @@ boolean thrusting = Gdx.input.isTouched();
 ## 5. Sprites — MANDATORY
 
 ### How sprites work
-The pipeline automatically copies a curated Kenney CC0 sprite library into
-`assets/sprites/` before Claude runs. A manifest `assets/ASSETS_MANIFEST.json`
-is also written there, listing every available file.
+The pipeline copies curated pixel-art sprite packs (craftpix) into type-based subdirectories
+under `assets/sprites/` before Claude runs. `assets/ASSETS_MANIFEST.json` lists every pack selected.
 
 **Before writing ANY game object code:**
 1. Read `assets/ASSETS_MANIFEST.json` — it is always present
-2. Use the sprites listed there for player, enemies, obstacles, collectibles **and all UI**
+2. `ls` each subdirectory listed in the manifest to discover actual filenames — **never hardcode filenames**
 3. Never use plain colored rectangles for game objects when sprites are available
-4. Never use plain `TextButton` — always apply a button style using Kenney button PNGs
+4. Never use plain `TextButton` — buttons are drawn programmatically via `UiFactory.drawButton()`
 
-### Categories available
-| Category | Key sprites | Use for |
+### Sprite subdirectories (archetype-dependent)
+The exact subdirectories present depend on the game archetype. Always check the manifest first.
+
+| Subdirectory | Asset type | How to discover files |
 |---|---|---|
-| `balloon/` | balloon_green_*.png (5 files) | Balloon-pop games |
-| `board-icons/` | board_icon_NNN.png (255 icons) | Memory-match cards, board-game tokens |
-| `characters/` | 417 files — 6 toon types + 4 platformer types, each with idle/walk/run/jump/hurt | Player characters in platformers, runners, maze games |
-| `enemies/` | alien_head_green_f1-3, dragon_head_orange_f1-4, enemy_gem_capsule_winged_f1-2, strip sheets (12 files) | Enemy characters in any game |
-| `fish/` | fish species, hooks, rods (126 files) | Fishing-arcade |
-| `generic/` | coin_gold, coin_silver, star, gem (4 colors) | Collectibles in any game |
-| `jumper/` | bunny player (2 skins), platforms (5 types + broken), flying/spike enemies, spring/jetpack items | Doodle Jump-style infinite vertical jumper |
-| `orbs/` | orb_red/blue/green/yellow/purple/orange + bubble (35 files) | Bubble-shooter, match-3, orbit-dash |
-| `physics/` | blocks, crates, discs, bombs, pins, balls (337 files) | Slingshot, pinball, plinko, breakout |
-| `plane/` | planeBlue/Red/Yellow (3 frames each), pipes, background, ground (13 files) | Flappy-bird, glide-runner |
-| `puzzle/` | balls (blue/yellow/grey), paddles, back tiles | Brick breaker, ball games |
-| `racing/` | car_player (yellow), car_red, car_blue, car_green, car_black | Top-down car games |
-| `roguelike/` | 161 dungeon tiles (16×16 px) — walls, floors, doors, chests, enemies | Roguelike, maze-runner, dungeon-crawler |
-| `runner/` | player walk/jump/hurt, enemies (slime, fly, bee, saw), obstacles (spike, rock, lava), ground tiles | Side-scrollers, runners, jetpack, flappy-style |
-| `slingshot/` | wood/stone/metal/glass blocks (square/plank/column), alien targets, debris, star ratings | Angry Birds-style slingshot, physics destruction |
-| `snake/` | snake head/body/tail/turns (4 directions each) + apple (17 files) | Snake |
-| `space/` | 115 clean named files — player ships, enemy ships, deathstars, lasers, bullets, asteroids, explosions | Space shooters, asteroid-miner, meteor-defense |
-| `stack/` | stack_ring_green_*.png (8 files) | Stack / ring-toss games |
-| `tower-defense/` | 300 tiles (64×64 px) — terrain, towers, enemies, projectiles | Tower-defense, meteor-defense |
-| `ui/` | buttons (5 colours × up/down), round icon buttons, slider, HUD icons (heart, timer, coin, star…) | **Every screen** — all buttons, HUD icons, settings sliders |
-| `ui-pixel/` | 129 pixel-style panels, buttons, icons, bars | Retro/pixel-art UI |
+| `sprites/character/` | Player / hero sprites | `ls assets/sprites/character/` |
+| `sprites/tileset/` | Level tiles, platforms, floors | `ls assets/sprites/tileset/` |
+| `sprites/enemy/` | Enemy sprites | `ls assets/sprites/enemy/` |
+| `sprites/vehicle/` | Ships, cars, planes | `ls assets/sprites/vehicle/` |
+| `sprites/object/` | Collectibles, projectiles, props | `ls assets/sprites/object/` |
+| `sprites/ui/` | UI elements, icons (always present) | `ls assets/sprites/ui/` |
+| `backgrounds/menu/` | Menu background images | `ls assets/backgrounds/menu/` |
+| `backgrounds/game/` | Gameplay background images | `ls assets/backgrounds/game/` |
+
+**Never hardcode a sprite filename.** Always `ls` the directory first, then use the filenames you find.
 
 ### Loading sprites with AssetManager
 
-```java
-// In your loading screen or MainGame:
-manager.load("sprites/player_idle.png", Texture.class);
-manager.load("sprites/player_walk1.png", Texture.class);
-manager.load("sprites/enemy_slime.png", Texture.class);
-manager.load("sprites/coin_gold.png", Texture.class);
-// ... load all sprites you'll use
+**Pattern: always `ls` the directory first, then load the filenames you find. Never invent filenames.**
 
-// In your screen (after finishLoading):
-Texture playerTex = manager.get("sprites/player_idle.png", Texture.class);
+```java
+// 1. ls assets/sprites/character/  -> discover filenames, e.g. "hero_idle.png", "hero_walk1.png"
+// 2. In your loading screen:
+manager.load("sprites/character/hero_idle.png",  Texture.class);
+manager.load("sprites/character/hero_walk1.png", Texture.class);
+manager.load("sprites/tileset/ground_tile.png",  Texture.class);
+
+// 3. In your screen (after finishLoading):
+Texture playerTex = manager.get("sprites/character/hero_idle.png", Texture.class);
 ```
 
 ### Animation example (walk cycle)
@@ -168,10 +159,10 @@ Texture playerTex = manager.get("sprites/player_idle.png", Texture.class);
 private Animation<TextureRegion> walkAnim;
 private float stateTime = 0f;
 
-// In constructor (after assets loaded):
+// In constructor (after assets loaded) — use filenames discovered via ls:
 TextureRegion[] frames = {
-    new TextureRegion(manager.get("sprites/player_walk1.png", Texture.class)),
-    new TextureRegion(manager.get("sprites/player_walk2.png", Texture.class))
+    new TextureRegion(manager.get("sprites/character/hero_walk1.png", Texture.class)),
+    new TextureRegion(manager.get("sprites/character/hero_walk2.png", Texture.class))
 };
 walkAnim = new Animation<>(0.15f, frames);
 
@@ -182,85 +173,51 @@ batch.draw(frame, x, y, width, height);
 ```
 
 ### UI button rules — MANDATORY
-Every screen must use styled buttons. Never use unstyled `TextButton`.
+Every screen must use styled buttons via `UiFactory.drawButton()`. Never use unstyled `TextButton`.
+
+Agent1 creates `UiFactory.java` with a `drawButton(ShapeRenderer sr, SpriteBatch batch, BitmapFont font,
+String label, float x, float y, float w, float h)` method that renders the assigned button style
+(rounded / pixel / neon) using ShapeRenderer + SpriteBatch. **All screens call `UiFactory.drawButton()`.**
+
+Standard button sizes: main 240x70 secondary 200x60 round icon 60x60
+
+### Settings screen — icons for toggles
+`assets/sprites/ui/` always contains icon PNGs. Run `ls assets/sprites/ui/` to see what is available.
+Use the closest match for music-on/off and sfx-on/off toggles. If suitable icon PNGs exist:
 
 ```java
-// Helper — reuse across all screens (define once in MainGame or a UIFactory):
-private TextButton.TextButtonStyle makeButtonStyle(String upFile, String downFile) {
-    TextButton.TextButtonStyle s = new TextButton.TextButtonStyle();
-    s.font      = game.skin.getFont("default-font"); // your BitmapFont
-    s.up        = new TextureRegionDrawable(manager.get(upFile,   Texture.class));
-    s.down      = new TextureRegionDrawable(manager.get(downFile, Texture.class));
-    s.fontColor = Color.WHITE;
-    return s;
-}
-
-// Primary action (Play, Start, Continue):
-TextButton playBtn = new TextButton("PLAY",
-    makeButtonStyle("sprites/ui/button_blue.png", "sprites/ui/button_blue_pressed.png"));
-playBtn.setSize(240, 70);
-
-// Secondary / Back / Menu:
-TextButton backBtn = new TextButton("BACK",
-    makeButtonStyle("sprites/ui/button_grey.png", "sprites/ui/button_grey_pressed.png"));
-backBtn.setSize(200, 60);
-
-// Buy / Confirm in ShopScreen:
-TextButton buyBtn = new TextButton("BUY",
-    makeButtonStyle("sprites/ui/button_green.png", "sprites/ui/button_green_pressed.png"));
-
-// Retry / Danger:
-TextButton retryBtn = new TextButton("RETRY",
-    makeButtonStyle("sprites/ui/button_red.png", "sprites/ui/button_red_pressed.png"));
-```
-
-Standard button sizes: main 240×70 · secondary 200×60 · round icon 60×60
-
-### Settings screen — use icons for toggles
-```java
-// Music toggle button using icon sprites:
+// ls assets/sprites/ui/ first — then use the actual filenames you find:
 ImageButton musicBtn = new ImageButton(
-    new TextureRegionDrawable(manager.get("sprites/ui/icon_music_on.png",  Texture.class)),
-    new TextureRegionDrawable(manager.get("sprites/ui/icon_music_off.png", Texture.class))
+    new TextureRegionDrawable(manager.get("sprites/ui/<music_on_icon>.png",  Texture.class)),
+    new TextureRegionDrawable(manager.get("sprites/ui/<music_off_icon>.png", Texture.class))
 );
-musicBtn.setChecked(!musicEnabled); // checked state = off icon shown
 ```
+If no suitable icon PNG is found, draw the toggle as a labelled `UiFactory.drawButton()` button.
 
 ### HUD icons — MANDATORY source
-**⛔ Never reference a sprite path without checking `assets/ASSETS_MANIFEST.json` first.**
+**Never reference a sprite path without checking `assets/ASSETS_MANIFEST.json` first.**
 Only use directories that appear in the manifest. `assets/sprites/ui/` is always present.
 
-All HUD icons (hearts, timer, star, settings gear, etc.) **must** come from `assets/sprites/ui/`.
+Run `ls assets/sprites/ui/` to discover available icon files. Use the closest match for
+hearts, stars, coins, timers, settings, etc. **Never assume specific filenames — always ls first.**
+
 **Never** create an `assets/icons/` folder — it is redundant and will be ignored.
 
-| HUD need | Use this sprite |
-|----------|----------------|
-| Life / health indicator | `sprites/ui/icon_heart.png` / `sprites/ui/icon_heart_empty.png` |
-| Timer / countdown | `sprites/ui/icon_timer.png` |
-| Star / rating | `sprites/ui/icon_star.png` |
-| Settings gear | `sprites/icon_settings.png` |
-| Lock / unlock | `sprites/icon_locked.png` / `sprites/icon_unlocked.png` |
-| Leaderboard | `sprites/icon_leaderboard.png` |
-| Trophy | `sprites/icon_trophy.png` |
-| Close / X | `sprites/icon_close.png` |
-
 Game-specific power-up icons (e.g. `ui/power_up_laser_icon.png` from Figma) may be loaded
-from `assets/ui/` — those are exported by Figma and are game-specific, **not** generic HUD icons.
+from `assets/ui/` — those are Figma exports and are game-specific, **not** generic HUD icons.
 
 ```java
-// WRONG — never load from assets/icons/
-manager.load("icons/heart.png", Texture.class);
+// WRONG — hardcoding filenames without ls check first:
+manager.load("sprites/ui/icon_heart.png", Texture.class);  // may not exist in this pack
 
-// CORRECT — use the sprites/ library
-manager.load("sprites/icon_heart.png", Texture.class);
-manager.load("sprites/icon_timer.png", Texture.class);
+// CORRECT — ls first, then load what you actually find:
+manager.load("sprites/ui/<actual_icon_filename>.png", Texture.class);
 ```
 
 ### Other important sprite rules
 - Load sprites via `AssetManager` — zero `new Texture("sprites/...")` calls
 - Scale sprites to world units (not pixel size): typical player is 64×64 world units
-- If a sprite category doesn't match the game theme, use `generic/` collectibles
-  and draw obstacles/terrain using `ShapeRenderer` as fallback
+- If no suitable sprite is found for a game element, draw it with `ShapeRenderer` as fallback
 
 ---
 
@@ -885,9 +842,8 @@ If no reference games provided — build clean, minimal implementation matching 
 - [ ] android/res/values/strings.xml app_name updated to game title
 - [ ] `assets/ASSETS_MANIFEST.json` was read before writing game object code
 - [ ] Player, enemies, collectibles use sprites from `assets/sprites/` — no plain rectangles
-- [ ] All buttons use Kenney button PNGs (`button_blue.png` etc.) — no unstyled `TextButton`
-- [ ] Every button has BOTH `up` (depth shadow) and `down` (flat) drawable set
-- [ ] Settings screen uses `icon_music_on/off` and `icon_sfx_on/off` for toggles
+- [ ] All buttons drawn via `UiFactory.drawButton()` — no unstyled `TextButton`
+- [ ] Settings screen toggle buttons use icon PNGs from `sprites/ui/` (ls to find filenames) or UiFactory fallback
 - [ ] If coins/currency collected → `ShopScreen` exists with spendable items
 - [ ] If no `ShopScreen` → no coin collection; collectibles add score directly
 - [ ] `LeaderboardScreen` has a visible "Main Menu" / "Back" button
