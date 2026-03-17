@@ -262,10 +262,15 @@ FreeTypeFontGenerator titleGen = new FreeTypeFontGenerator(Gdx.files.internal("f
 
 FreeTypeFontGenerator.FreeTypeFontParameter param = new FreeTypeFontGenerator.FreeTypeFontParameter();
 
+// ALWAYS add outline — without it text looks flat and unreadable on varied backgrounds
+param.borderWidth = 2;                              // outline thickness
+param.borderColor = new Color(0f, 0f, 0f, 0.85f);  // near-black semi-transparent outline
+
 param.size = 28;
 fontBody = bodyGen.generateFont(param);
 
 param.size = 48;
+param.borderWidth = 3;  // thicker outline for large title text
 fontTitle = titleGen.generateFont(param);
 
 bodyGen.dispose();
@@ -273,6 +278,7 @@ titleGen.dispose();
 ```
 
 Generate additional sizes as needed (e.g. `param.size = 20` for small labels, `param.size = 72` for big score).
+**For each size set `param.borderWidth` appropriately: 1 for sizes <=16, 2 for sizes 17-36, 3 for sizes >=37.**
 Always dispose the generator immediately after generating — keep the `BitmapFont`, not the generator.
 
 ### Using fonts in button styles
@@ -826,6 +832,7 @@ If no reference games provided — build clean, minimal implementation matching 
 - [ ] Fonts loaded from `assets/fonts/` — never from `assets/ui/` or anywhere else
 - [ ] `game.fontBody` and `game.fontTitle` generated in `MainGame.create()` using the ASSIGNED FONTS filenames
 - [ ] Button styles use `game.fontBody` — never `skin.getFont()`
+- [ ] All `FreeTypeFontParameter` instances set `borderWidth` (1 for small, 2 for body, 3 for title) and `borderColor` — never generate fonts without outline
 - [ ] `Constants.java` has WORLD_WIDTH, WORLD_HEIGHT and all magic numbers
 - [ ] SharedPreferences saves/loads scores and settings
 - [ ] No `System.out.println` — use `Gdx.app.log`
