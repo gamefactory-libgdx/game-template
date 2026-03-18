@@ -733,6 +733,33 @@ public static final String PREF_SFX   = "sfxEnabled";
 - Stop current music before starting new: check `currentMusic != null`
 - SFX volume: `play(1.0f)` — use `play(0.5f)` for quieter effects like toggle
 
+### Music / rhythm games — MANDATORY note sounds
+
+For **piano-tiles, drum-hero, rhythm** or any game where the player taps lanes in time with music,
+each lane tap **must play a distinct musical note sound** — never a generic hit/click SFX.
+
+Available musical note sets in `sounds/sfx/`:
+- `sfx_jingle_hit_00.ogg` … `sfx_jingle_hit_16.ogg` — melodic hits (use for rock/pop lanes)
+- `sfx_jingle_pizz_00.ogg` … `sfx_jingle_pizz_16.ogg` — pizzicato notes (use for jazz lanes)
+- `sfx_jingle_8bit_00.ogg` … `sfx_jingle_8bit_16.ogg` — 8-bit tones (use for retro/chiptune lanes)
+
+Pattern — assign one note per lane so each column sounds different:
+```java
+// 4-lane example: each lane plays a different note from the set
+private static final String[] LANE_SOUNDS = {
+    "sounds/sfx/sfx_jingle_hit_00.ogg",
+    "sounds/sfx/sfx_jingle_hit_04.ogg",
+    "sounds/sfx/sfx_jingle_hit_08.ogg",
+    "sounds/sfx/sfx_jingle_hit_12.ogg"
+};
+
+// On successful hit:
+game.manager.get(LANE_SOUNDS[lane], Sound.class).play(1.0f);
+```
+
+- Load all used note sounds in `loadAssets()` via `AssetManager`
+- **Never** use `sfx_hit.ogg`, `sfx_click.ogg`, or `sfx_bong.ogg` as the tap sound in a rhythm game
+
 ---
 
 ## 13. Assets
@@ -749,6 +776,38 @@ Texture bg = new Texture("backgrounds/bg_desert.png");
 
 - All filenames exactly as in GAME_SPEC
 - If AssetManager owns it, use `manager.unload()` not `texture.dispose()`
+
+### ⚠️ MANDATORY: Every screen must render a background image
+
+Every screen (menu, gameplay, game over, pause, etc.) **MUST** load and draw a background image.
+**Never** leave a screen with only `glClearColor` — that produces an ugly solid-colour screen.
+
+```java
+// In constructor — pick the first file from ls assets/backgrounds/menu/ or backgrounds/game/
+private static final String BG = "backgrounds/menu/YOUR_BG_FILE.png"; // exact filename from ls
+
+// Load in constructor (after manager is ready):
+if (!game.manager.isLoaded(BG)) {
+    game.manager.load(BG, Texture.class);
+    game.manager.finishLoading();
+}
+
+// At the TOP of render(), before anything else:
+game.batch.begin();
+game.batch.draw(game.manager.get(BG, Texture.class),
+        0, 0, Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT);
+game.batch.end();
+
+// Then draw UI / game elements on top
+```
+
+Rules:
+- Menu screens → use a file from `assets/backgrounds/menu/`
+- Game screens → use a file from `assets/backgrounds/game/`
+- Game over / pause screens → reuse the menu background or game background
+- Always `ls` the directory first — never invent filenames
+- Stretch the image to fill the full world (0, 0, WORLD_WIDTH, WORLD_HEIGHT)
+- The `glClearColor` call can remain but set it to black `(0,0,0,1)` as a safe fallback
 
 ---
 
@@ -838,6 +897,8 @@ If no reference games provided — build clean, minimal implementation matching 
 - [ ] No `System.out.println` — use `Gdx.app.log`
 - [ ] `dispose()` on every screen
 - [ ] Background music plays on every screen (menu, gameplay, game over)
+- [ ] Every screen draws a background image (backgrounds/menu/ or backgrounds/game/) — never solid glClearColor only
+- [ ] Rhythm/music games use sfx_jingle_hit/pizz/8bit note sounds per lane — not generic sfx_hit.ogg
 - [ ] GameScreen uses `sounds/music/music_gameplay.ogg` (always — the pipeline selects the right track for this archetype)
 - [ ] GameOverScreen uses `playMusicOnce()` — game over music plays once and stops, never loops
 - [ ] SFX plays on button clicks, coin collect, jump, hit, game over
