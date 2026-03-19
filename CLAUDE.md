@@ -809,6 +809,77 @@ Rules:
 - Stretch the image to fill the full world (0, 0, WORLD_WIDTH, WORLD_HEIGHT)
 - The `glClearColor` call can remain but set it to black `(0,0,0,1)` as a safe fallback
 
+### ⚠️ MANDATORY: Use generated UI screen images when available
+
+Every game has a pre-generated image for each UI screen, produced by the AI image pipeline.
+Before writing any Screen class, run:
+```bash
+cat IMAGES_MANIFEST.json
+```
+The `generated` array lists image paths (relative to `assets/`). Use them as screen backgrounds.
+
+**Mapping rule:** Match the image filename to the screen class — e.g.
+- `ui/mainmenu_screen.png` → `MainMenuScreen`
+- `ui/kitchenselect_screen.png` → `KitchenSelectScreen`
+- `ui/gameover_screen.png` → `GameOverScreen`
+
+**When a generated image exists for a screen:**
+
+```java
+// Hardcode the exact path from IMAGES_MANIFEST.json
+private static final String BG = "ui/mainmenu_screen.png";
+
+// In show() — load if not already loaded:
+if (!game.manager.isLoaded(BG)) {
+    game.manager.load(BG, Texture.class);
+    game.manager.finishLoading();
+}
+
+// At the TOP of render(), before stage.draw():
+Gdx.gl.glClearColor(0, 0, 0, 1);
+Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+game.batch.begin();
+game.batch.draw(game.manager.get(BG, Texture.class),
+        0, 0, Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT);
+game.batch.end();
+stage.act(delta);
+stage.draw();
+```
+
+**Button styling over a generated image:**
+
+All interactive buttons placed on top of a generated image MUST use **transparent/empty styling**
+so the image shows through. The image already draws the button visually — the LibGDX widget is
+only the invisible touch zone.
+
+```java
+// Create a completely transparent button style
+TextButton.TextButtonStyle invisible = new TextButton.TextButtonStyle();
+invisible.font = game.skin.getFont("default");          // any font, text won't be visible
+invisible.fontColor = new Color(0, 0, 0, 0);            // transparent text
+// NO up/down/checked drawables — button is invisible, image underneath is the visual
+
+TextButton playBtn = new TextButton("", invisible);
+playBtn.setSize(280, 56);
+playBtn.setPosition((Constants.WORLD_WIDTH - 280) / 2f, 320);
+playBtn.addListener(new ClickListener() {
+    @Override public void clicked(InputEvent e, float x, float y) {
+        // navigate
+    }
+});
+stage.addActor(playBtn);
+```
+
+**Button position coordinates** come from FIGMA_BRIEF.md — each screen section lists exact
+pixel positions and sizes for every interactive element. Read FIGMA_BRIEF.md before writing
+each Screen class.
+
+**If the generated image is missing** (it appears in the `failed` list or not in `generated`),
+fall back to a file from `assets/backgrounds/menu/` or `assets/backgrounds/game/` as before.
+
+**NEVER** draw a screen as a solid colour or `ShapeRenderer` fill when a generated image exists.
+
+
 ---
 
 ## 14. Constants.java
