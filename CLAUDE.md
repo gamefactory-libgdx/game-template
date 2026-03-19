@@ -819,15 +819,15 @@ cat IMAGES_MANIFEST.json
 The `generated` array lists image paths (relative to `assets/`). Use them as screen backgrounds.
 
 **Mapping rule:** Match the image filename to the screen class — e.g.
-- `ui/mainmenu_screen.png` → `MainMenuScreen`
-- `ui/kitchenselect_screen.png` → `KitchenSelectScreen`
-- `ui/gameover_screen.png` → `GameOverScreen`
+- `ui/main_menu.png` → `MainMenuScreen`
+- `ui/kitchen_select.png` → `KitchenSelectScreen`
+- `ui/game_over.png` → `GameOverScreen`
 
 **When a generated image exists for a screen:**
 
 ```java
 // Hardcode the exact path from IMAGES_MANIFEST.json
-private static final String BG = "ui/mainmenu_screen.png";
+private static final String BG = "ui/main_menu.png";
 
 // In show() — load if not already loaded:
 if (!game.manager.isLoaded(BG)) {
@@ -870,14 +870,23 @@ playBtn.addListener(new ClickListener() {
 stage.addActor(playBtn);
 ```
 
-**Button position coordinates** come from FIGMA_BRIEF.md — each screen section lists exact
-pixel positions and sizes for every interactive element. Read FIGMA_BRIEF.md before writing
-each Screen class.
+**Button position coordinates** come from FIGMA_BRIEF.md — each screen's **Element Map** block
+lists every button with  (pixels from top of screen), alignment, and size.
+
+**⚠️ CRITICAL: Y-coordinate conversion** — FIGMA_BRIEF uses top-down Y (0 = top of screen).
+LibGDX uses bottom-up Y (0 = bottom). Convert with:
+
+
+**NEVER draw text labels** (PLAY, SETTINGS, BACK, etc.) over a generated image background —
+the image already has them baked in. Only draw **dynamic runtime data** on top (score, timer,
+ON/OFF state, player name, etc.).
 
 **If the generated image is missing** (it appears in the `failed` list or not in `generated`),
 fall back to a file from `assets/backgrounds/menu/` or `assets/backgrounds/game/` as before.
 
 **NEVER** draw a screen as a solid colour or `ShapeRenderer` fill when a generated image exists.
+
+
 
 
 ---
