@@ -809,16 +809,20 @@ Rules:
 - Stretch the image to fill the full world (0, 0, WORLD_WIDTH, WORLD_HEIGHT)
 - The `glClearColor` call can remain but set it to black `(0,0,0,1)` as a safe fallback
 
-### ⚠️ MANDATORY: Use generated UI screen images when available
+### ⚠️ MANDATORY: Use generated UI screen images as backgrounds
 
-Every game has a pre-generated image for each UI screen, produced by the AI image pipeline.
+Every game has pre-generated PNG backgrounds for each UI screen (AI image pipeline output).
 Before writing any Screen class, run:
 ```bash
 cat IMAGES_MANIFEST.json
 ```
-The `generated` array lists image paths (relative to `assets/`). Use them as screen backgrounds.
+The `generated` array lists image paths (relative to `assets/`). Load them as screen backgrounds.
 
-**Mapping rule:** Match the image filename to the screen class — e.g.
+**IMPORTANT: Images are BACKGROUNDS ONLY — no buttons or text are baked into them.**
+The AI generates rich atmospheric art with decorative empty panel frames.
+ALL buttons, labels, titles, and text are drawn by LibGDX code on top.
+
+**Mapping rule** — match filename to screen class:
 - `ui/main_menu.png` → `MainMenuScreen`
 - `ui/kitchen_select.png` → `KitchenSelectScreen`
 - `ui/game_over.png` → `GameOverScreen`
@@ -826,68 +830,66 @@ The `generated` array lists image paths (relative to `assets/`). Use them as scr
 **When a generated image exists for a screen:**
 
 ```java
-// Hardcode the exact path from IMAGES_MANIFEST.json
-private static final String BG = "ui/main_menu.png";
+private static final String BG = "ui/main_menu.png";  // exact path from IMAGES_MANIFEST.json
 
-// In show() — load if not already loaded:
-if (!game.manager.isLoaded(BG)) {
-    game.manager.load(BG, Texture.class);
-    game.manager.finishLoading();
+@Override public void show() {
+    if (!game.manager.isLoaded(BG)) {
+        game.manager.load(BG, Texture.class);
+        game.manager.finishLoading();
+    }
+    // ... build stage actors (buttons, labels) here
+    Gdx.input.setInputProcessor(stage);
 }
 
-// At the TOP of render(), before stage.draw():
-Gdx.gl.glClearColor(0, 0, 0, 1);
-Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-game.batch.begin();
-game.batch.draw(game.manager.get(BG, Texture.class),
-        0, 0, Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT);
-game.batch.end();
-stage.act(delta);
-stage.draw();
+@Override public void render(float delta) {
+    Gdx.gl.glClearColor(0, 0, 0, 1);
+    Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+    // 1. Draw background first
+    game.batch.begin();
+    game.batch.draw(game.manager.get(BG, Texture.class),
+            0, 0, Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT);
+    game.batch.end();
+    // 2. Draw stage (buttons + labels) on top
+    stage.act(delta);
+    stage.draw();
+}
 ```
 
-**Button styling over a generated image:**
-
-All interactive buttons placed on top of a generated image MUST use **transparent/empty styling**
-so the image shows through. The image already draws the button visually — the LibGDX widget is
-only the invisible touch zone.
+**All buttons and text drawn by code — use UiFactory or styled TextButton:**
 
 ```java
-// Create a completely transparent button style
-TextButton.TextButtonStyle invisible = new TextButton.TextButtonStyle();
-invisible.font = game.skin.getFont("default");          // any font, text won't be visible
-invisible.fontColor = new Color(0, 0, 0, 0);            // transparent text
-// NO up/down/checked drawables — button is invisible, image underneath is the visual
-
-TextButton playBtn = new TextButton("", invisible);
+// Use UiFactory for styled buttons (consistent look across all screens)
+TextButton playBtn = UiFactory.makeButton("PLAY", skin);
 playBtn.setSize(280, 56);
-playBtn.setPosition((Constants.WORLD_WIDTH - 280) / 2f, 320);
-playBtn.addListener(new ClickListener() {
-    @Override public void clicked(InputEvent e, float x, float y) {
-        // navigate
+playBtn.setPosition((Constants.WORLD_WIDTH - 280) / 2f, 378f);  // from FIGMA_BRIEF Button Layout
+playBtn.addListener(new ChangeListener() {
+    @Override public void changed(ChangeEvent e, Actor a) {
+        game.setScreen(new GameScreen(game));
     }
 });
 stage.addActor(playBtn);
+
+// Static title text as a Label actor
+Label title = new Label("GAME TITLE", titleStyle);
+title.setPosition((Constants.WORLD_WIDTH - title.getPrefWidth()) / 2f, 720f);
+stage.addActor(title);
 ```
 
-**Button position coordinates** come from FIGMA_BRIEF.md — each screen's **Element Map** block
-lists every button with  (pixels from top of screen), alignment, and size.
+**⚠️ Y-coordinate conversion** — FIGMA_BRIEF Button Layout uses top-down Y (0 = top).
+LibGDX uses bottom-up Y (0 = bottom). Convert every coordinate:
+```
+libgdxY = WORLD_HEIGHT - figmaTopY - elementHeight
+// Example: figmaTopY=420, height=56, WORLD_HEIGHT=854 → libgdxY = 854 - 420 - 56 = 378
+```
 
-**⚠️ CRITICAL: Y-coordinate conversion** — FIGMA_BRIEF uses top-down Y (0 = top of screen).
-LibGDX uses bottom-up Y (0 = bottom). Convert with:
+**Read FIGMA_BRIEF.md Button Layout section for every screen** before placing any actor.
+It lists every button and label with `top-Y`, alignment, and `size=WxH`.
 
+**If the generated image is missing** (in `failed` list or absent from `generated`),
+fall back to a background from `assets/backgrounds/menu/` or `assets/backgrounds/game/`.
 
-**NEVER draw text labels** (PLAY, SETTINGS, BACK, etc.) over a generated image background —
-the image already has them baked in. Only draw **dynamic runtime data** on top (score, timer,
-ON/OFF state, player name, etc.).
-
-**If the generated image is missing** (it appears in the `failed` list or not in `generated`),
-fall back to a file from `assets/backgrounds/menu/` or `assets/backgrounds/game/` as before.
-
-**NEVER** draw a screen as a solid colour or `ShapeRenderer` fill when a generated image exists.
-
-
-
+**NEVER** skip the background image and draw a solid colour screen when a PNG exists.
+**NEVER** draw button text as static BitmapFont.draw() calls — use Stage Label/TextButton actors.
 
 ---
 
