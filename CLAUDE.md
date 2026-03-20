@@ -173,13 +173,68 @@ batch.draw(frame, x, y, width, height);
 ```
 
 ### UI button rules — MANDATORY
-Every screen must use styled buttons via `UiFactory.drawButton()`. Never use unstyled `TextButton`.
+Every screen uses sprite-backed TextButtons via `UiFactory`. Never use ShapeRenderer for buttons.
 
-Agent1 creates `UiFactory.java` with a `drawButton(ShapeRenderer sr, SpriteBatch batch, BitmapFont font,
-String label, float x, float y, float w, float h)` method that renders the assigned button style
-(rounded / pixel / neon) using ShapeRenderer + SpriteBatch. **All screens call `UiFactory.drawButton()`.**
+**Button sprites are pre-copied to `assets/ui/buttons/`** by the pipeline. Always run:
+```bash
+ls assets/ui/buttons/
+```
+You will find: `button_rectangle_depth_gradient.png` (normal), `button_rectangle_depth_flat.png` (pressed),
+`button_round_depth_gradient.png` (round normal), `button_round_depth_flat.png` (round pressed),
+`star.png`, `star_outline.png`.
 
-Standard button sizes: main 240x70 secondary 200x60 round icon 60x60
+**Agent1 creates `UiFactory.java`** with these methods — ALL screens call them, never roll their own:
+
+```java
+public class UiFactory {
+    // Call once from MainGame.create() or first screen show()
+    public static TextButton.TextButtonStyle makeRectStyle(AssetManager mgr, BitmapFont font) {
+        TextButton.TextButtonStyle s = new TextButton.TextButtonStyle();
+        s.font = font;
+        s.up   = new TextureRegionDrawable(new TextureRegion(
+                     mgr.get("ui/buttons/button_rectangle_depth_gradient.png", Texture.class)));
+        s.down = new TextureRegionDrawable(new TextureRegion(
+                     mgr.get("ui/buttons/button_rectangle_depth_flat.png", Texture.class)));
+        return s;
+    }
+
+    public static TextButton.TextButtonStyle makeRoundStyle(AssetManager mgr, BitmapFont font) {
+        TextButton.TextButtonStyle s = new TextButton.TextButtonStyle();
+        s.font = font;
+        s.up   = new TextureRegionDrawable(new TextureRegion(
+                     mgr.get("ui/buttons/button_round_depth_gradient.png", Texture.class)));
+        s.down = new TextureRegionDrawable(new TextureRegion(
+                     mgr.get("ui/buttons/button_round_depth_flat.png", Texture.class)));
+        return s;
+    }
+
+    // Convenience — create and size a rectangle button in one call
+    public static TextButton makeButton(String label, TextButton.TextButtonStyle style, float w, float h) {
+        TextButton btn = new TextButton(label, style);
+        btn.setSize(w, h);
+        return btn;
+    }
+}
+```
+
+**Usage in every Screen:**
+```java
+// In show() — load button textures (add to AssetManager in advance)
+if (!game.manager.isLoaded("ui/buttons/button_rectangle_depth_gradient.png")) {
+    game.manager.load("ui/buttons/button_rectangle_depth_gradient.png", Texture.class);
+    game.manager.load("ui/buttons/button_rectangle_depth_flat.png", Texture.class);
+    game.manager.finishLoading();
+}
+TextButton.TextButtonStyle btnStyle = UiFactory.makeRectStyle(game.manager, bodyFont);
+TextButton playBtn = UiFactory.makeButton("PLAY", btnStyle, 280, 56);
+playBtn.setPosition((Constants.WORLD_WIDTH - 280) / 2f, 378f);
+playBtn.addListener(new ChangeListener() {
+    @Override public void changed(ChangeEvent e, Actor a) { game.setScreen(new GameScreen(game)); }
+});
+stage.addActor(playBtn);
+```
+
+Standard button sizes: main `280x56` · secondary `220x50` · small `160x44` · round icon `56x56`
 
 ### Settings screen — icons for toggles
 `assets/sprites/ui/` always contains icon PNGs. Run `ls assets/sprites/ui/` to see what is available.
