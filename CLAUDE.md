@@ -1139,3 +1139,14 @@ starCountLabel.setText(String.valueOf(starBalance));  // plain number only
 ```
 
 Apply this pattern in: GameScreen HUD, ShopScreen balance display, GameOverScreen star summary.
+
+**IMPORTANT: always pre-load star.png in loadCoreAssets():**
+```java
+manager.load("ui/buttons/star.png",        Texture.class);
+manager.load("ui/buttons/star_outline.png", Texture.class);
+```
+Without this, `game.manager.get("ui/buttons/star.png")` crashes at runtime.
+
+**IMPORTANT: always pre-load star.png in loadCoreAssets():**
+
+Without this,  crashes at runtime.
