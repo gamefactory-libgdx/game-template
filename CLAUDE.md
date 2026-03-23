@@ -1091,3 +1091,24 @@ If no reference games provided — build clean, minimal implementation matching 
 - [ ] Every obstacle that can kill the player has a collision `Rectangle`
 - [ ] Background decorations (ambient shapes, parallax art) have NO collision rectangles
 - [ ] Collidable vs decorative objects kept in separate lists — never mixed
+
+
+---
+
+## 19. Vibration — MANDATORY when game uses haptic feedback
+
+**Always add the VIBRATE permission to `android/AndroidManifest.xml`** before `<uses-feature>`:
+
+```xml
+<uses-permission android:name="android.permission.VIBRATE"/>
+```
+
+**Always wrap every vibrate call in try/catch** — some devices reject it even with permission:
+
+```java
+if (game.vibrationEnabled) {
+    try { Gdx.input.vibrate(60); } catch (Exception e) { /* ignore */ }
+}
+```
+
+Without the manifest permission `Gdx.input.vibrate()` throws `SecurityException` and crashes the game.
