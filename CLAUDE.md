@@ -1112,3 +1112,30 @@ if (game.vibrationEnabled) {
 ```
 
 Without the manifest permission `Gdx.input.vibrate()` throws `SecurityException` and crashes the game.
+
+---
+
+## 20. Star Counter — Use PNG Icon, Not Font Glyphs
+
+The pipeline always copies `star.png` and `star_outline.png` to `assets/ui/buttons/`.
+These are already loaded in AssetManager via `loadCoreAssets()`.
+
+**ALWAYS use Image actor for the star icon** — never use ★ (U+2605) or any Unicode glyph,
+because game fonts (pixel/retro/display) rarely contain those characters and show a broken box.
+
+```java
+// Correct pattern — PNG icon + plain number label
+Image starIcon = new Image(game.manager.get("ui/buttons/star.png", Texture.class));
+starIcon.setSize(26f, 26f);
+starIcon.setPosition(x, y);
+stage.addActor(starIcon);
+
+Label starCountLabel = new Label(String.valueOf(starBalance), bodyStyle);
+starCountLabel.setPosition(x + 30f, y);
+stage.addActor(starCountLabel);
+
+// In render / update:
+starCountLabel.setText(String.valueOf(starBalance));  // plain number only
+```
+
+Apply this pattern in: GameScreen HUD, ShopScreen balance display, GameOverScreen star summary.
