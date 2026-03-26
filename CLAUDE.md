@@ -236,6 +236,23 @@ stage.addActor(playBtn);
 
 Standard button sizes: main `280x56` · secondary `220x50` · small `160x44` · round icon `56x56`
 
+### Button color tinting — MANDATORY
+Button PNGs are white/gray by default. **Always tint them** to match the game palette using `setColor()`.
+Add `COLOR_PRIMARY`, `COLOR_ACCENT`, `COLOR_BG` as hex-string constants in `Constants.java`, then apply:
+```java
+// In Constants.java:
+public static final String COLOR_PRIMARY = "#F5F5F5"; // from pipeline idea colors
+public static final String COLOR_ACCENT  = "#E53935";
+public static final String COLOR_BG      = "#2D2D2D";
+
+// When creating buttons — tint to match game theme:
+TextButton playBtn = UiFactory.makeButton("PLAY", btnStyle, 280, 56);
+playBtn.setColor(Color.valueOf(Constants.COLOR_PRIMARY)); // tint button texture
+playBtn.getLabel().setColor(Color.valueOf(Constants.COLOR_BG)); // contrast text
+```
+Use `COLOR_PRIMARY` for main action buttons, `COLOR_ACCENT` for danger/confirm buttons.
+This ensures every game's buttons visually match its color palette.
+
 ### Settings screen — icons for toggles
 `assets/sprites/ui/` always contains icon PNGs. Run `ls assets/sprites/ui/` to see what is available.
 Use the closest match for music-on/off and sfx-on/off toggles. If suitable icon PNGs exist:
@@ -248,6 +265,21 @@ ImageButton musicBtn = new ImageButton(
 );
 ```
 If no suitable icon PNG is found, draw the toggle as a labelled `UiFactory.drawButton()` button.
+
+### Settings button — ALWAYS use gear icon
+A gear icon is **permanently in the template** at `assets/ui/icons/settings_gear.png`.
+The settings button on any screen (MainMenu, GameScreen HUD, etc.) **must** be an `ImageButton`, never a text label:
+```java
+// CORRECT — gear icon ImageButton:
+Texture gearTex = game.manager.get("ui/icons/settings_gear.png", Texture.class);
+ImageButton settingsBtn = new ImageButton(new TextureRegionDrawable(gearTex));
+settingsBtn.setSize(56f, 56f);
+settingsBtn.setColor(Color.WHITE); // or tint to match theme
+
+// WRONG — never use text label for settings:
+// TextButton settingsBtn = UiFactory.makeButton("S", roundStyle, 60f, 60f); // ❌
+```
+Add `game.manager.load("ui/icons/settings_gear.png", Texture.class)` to your AssetManager loading list.
 
 ### HUD icons — MANDATORY source
 **Never reference a sprite path without checking `assets/ASSETS_MANIFEST.json` first.**
@@ -267,6 +299,26 @@ manager.load("sprites/ui/icon_heart.png", Texture.class);  // may not exist in t
 
 // CORRECT — ls first, then load what you actually find:
 manager.load("sprites/ui/<actual_icon_filename>.png", Texture.class);
+```
+
+### knife-hit archetype — specific sprite rules
+For the `knife-hit` archetype the pipeline copies 3 sprite folders:
+- `assets/sprites/object/` — log/board/target objects
+- `assets/sprites/weapon/` — blade/knife/stave sprites (use these for the throwable blade)
+- `assets/sprites/collectible/` — food/fruit sprites including `apple.png` for the bonus collectible
+
+**Throwable blade:** Load a sprite from `assets/sprites/weapon/` — pick the most knife/blade-like PNG (run `ls assets/sprites/weapon/`). Render as `Sprite`, NOT ShapeRenderer sticks:
+```java
+Texture bladeTex = game.manager.get("sprites/weapon/<blade_filename>.png", Texture.class);
+Sprite bladeSprite = new Sprite(bladeTex);
+bladeSprite.setSize(12f, 48f); // tall thin proportions for a knife
+bladeSprite.setOriginCenter(); // rotate around center when stuck in log
+```
+
+**Apple bonus collectible:** Load from `assets/sprites/collectible/` — find the apple PNG (run `ls assets/sprites/collectible/`). **Never use `coinGold.png` for an apple.** Sound must be `sfx_collect.ogg`, NOT `sfx_coin.ogg`:
+```java
+private static final String APPLE_TEX = "sprites/collectible/apple.png"; // ls to confirm filename
+// sound: playSound("sounds/sfx/sfx_collect.ogg", 1.0f);
 ```
 
 ### Other important sprite rules
