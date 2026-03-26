@@ -266,18 +266,22 @@ ImageButton musicBtn = new ImageButton(
 ```
 If no suitable icon PNG is found, draw the toggle as a labelled `UiFactory.drawButton()` button.
 
-### Settings button — ALWAYS use gear icon
+### Settings button — gear icon vs text
 A gear icon is **permanently in the template** at `assets/ui/icons/settings_gear.png`.
-The settings button on any screen (MainMenu, GameScreen HUD, etc.) **must** be an `ImageButton`, never a text label:
+
+**Rule:** use the gear icon ONLY when the settings button is a small round/square icon (corner of screen, HUD overlay, etc.).
+When settings appears as a full-width text button in a menu list alongside "PLAY", "LEADERBOARD" etc., use a normal `TextButton` with label `"SETTINGS"`.
+
 ```java
-// CORRECT — gear icon ImageButton:
+// Small icon button (corner/HUD) — USE GEAR IMAGE:
 Texture gearTex = game.manager.get("ui/icons/settings_gear.png", Texture.class);
 ImageButton settingsBtn = new ImageButton(new TextureRegionDrawable(gearTex));
 settingsBtn.setSize(56f, 56f);
-settingsBtn.setColor(Color.WHITE); // or tint to match theme
 
-// WRONG — never use text label for settings:
-// TextButton settingsBtn = UiFactory.makeButton("S", roundStyle, 60f, 60f); // ❌
+// Full menu list button — USE TEXT:
+TextButton settingsBtn = UiFactory.makeButton("SETTINGS", btnStyle, 280, 56); // ✓
+// WRONG — never use a single letter as label:
+// UiFactory.makeButton("S", roundStyle, 60f, 60f); // ❌
 ```
 Add `game.manager.load("ui/icons/settings_gear.png", Texture.class)` to your AssetManager loading list.
 
