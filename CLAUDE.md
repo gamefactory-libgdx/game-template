@@ -253,6 +253,18 @@ playBtn.getLabel().setColor(Color.valueOf(Constants.COLOR_BG)); // contrast text
 Use `COLOR_PRIMARY` for main action buttons, `COLOR_ACCENT` for danger/confirm buttons.
 This ensures every game's buttons visually match its color palette.
 
+**Settings toggle on/off state — never use hardcoded green/red:**
+```java
+// WRONG — hardcoded green/red:
+// COLOR_ON = new Color(0.3f, 0.8f, 0.3f, 1f); // ❌
+// COLOR_OFF = new Color(0.7f, 0.2f, 0.2f, 1f); // ❌
+
+// CORRECT — use game palette:
+Color toggleOn  = Color.valueOf(Constants.COLOR_PRIMARY); // active = game accent
+Color toggleOff = new Color(0.35f, 0.35f, 0.35f, 1f);   // inactive = neutral gray
+btn.setColor(isOn ? toggleOn : toggleOff);
+```
+
 ### Settings screen — icons for toggles
 `assets/sprites/ui/` always contains icon PNGs. Run `ls assets/sprites/ui/` to see what is available.
 Use the closest match for music-on/off and sfx-on/off toggles. If suitable icon PNGs exist:
@@ -293,6 +305,18 @@ Run `ls assets/sprites/ui/` to discover available icon files. Use the closest ma
 hearts, stars, coins, timers, settings, etc. **Never assume specific filenames — always ls first.**
 
 **Never** create an `assets/icons/` folder — it is redundant and will be ignored.
+
+### Batch color reset — MANDATORY
+LibGDX `SpriteBatch` retains its color between frames. Tinted actors (buttons, sprites) leave the batch dirty. **Always reset before drawing backgrounds:**
+```java
+// In every screen render() — BEFORE game.batch.begin():
+game.batch.setColor(Color.WHITE);
+game.batch.begin();
+game.batch.draw(bgTexture, 0, 0, Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT);
+game.batch.end();
+// then stage.draw() after
+```
+Skipping this causes backgrounds to inherit tint from the previous frame's button rendering.
 
 Game-specific power-up icons (e.g. `ui/power_up_laser_icon.png` from Figma) may be loaded
 from `assets/ui/` — those are Figma exports and are game-specific, **not** generic HUD icons.
