@@ -1230,3 +1230,126 @@ Without this, `game.manager.get("ui/buttons/star.png")` crashes at runtime.
 **IMPORTANT: always pre-load star.png in loadCoreAssets():**
 
 Without this,  crashes at runtime.
+
+---
+
+
+
+---
+
+## 21. Snake Archetype — MANDATORY mechanics
+
+These rules apply whenever `archetype == snake` (or any hybrid that uses snake movement).
+
+### Smooth movement — sub-tile lerp interpolation
+
+Snake movement MUST feel fluid, not robotic. Implement sub-tile lerp so segments
+glide between cells instead of jumping.
+
+**Required fields in GameScreen:**
+```java
+private float[] prevX;  // pixel X of each segment at start of last move tick
+private float[] prevY;  // pixel Y of each segment at start of last move tick
+private float   lerpT;  // 0 to 1 within current move interval
+private static final int MAX_SNAKE = GRID_COLS * GRID_ROWS + 4;
+```
+
+**initGame() — initialise arrays:**
+```java
+prevX = new float[MAX_SNAKE];
+prevY = new float[MAX_SNAKE];
+for (int i = 0; i < snake.size; i++) {
+    prevX[i] = PLAY_AREA_X + snake.get(i).col * CELL_SIZE;
+    prevY[i] = PLAY_AREA_Y + snake.get(i).row * CELL_SIZE;
+}
+lerpT = 1f;
+```
+
+**moveSnake() — snapshot pixel positions BEFORE advancing:**
+```java
+private void moveSnake() {
+    for (int i = 0; i < snake.size; i++) {
+        prevX[i] = PLAY_AREA_X + snake.get(i).col * CELL_SIZE;
+        prevY[i] = PLAY_AREA_Y + snake.get(i).row * CELL_SIZE;
+    }
+    lerpT = 0f;
+    // ... rest of move logic
+}
+```
+
+**update() — advance lerpT AFTER moveSnake fires:**
+```java
+moveTimer -= delta;
+if (moveTimer <= 0f) {
+    moveTimer = moveInterval;
+    moveSnake();   // resets lerpT = 0
+}
+lerpT = Math.min(1f, lerpT + delta / moveInterval);
+```
+
+**render() — draw each segment at its lerped position:**
+```java
+// Body: gradient from bright (near head) to dark (tail)
+for (int i = 1; i < snake.size; i++) {
+    float tx = PLAY_AREA_X + snake.get(i).col * CELL_SIZE;
+    float ty = PLAY_AREA_Y + snake.get(i).row * CELL_SIZE;
+    float rx = (prevX != null && i < prevX.length) ? MathUtils.lerp(prevX[i], tx, lerpT) : tx;
+    float ry = (prevY != null && i < prevY.length) ? MathUtils.lerp(prevY[i], ty, lerpT) : ty;
+    float fade = MathUtils.lerp(0.85f, 0.30f, (float)i / Math.max(snake.size - 1, 1));
+    shapeRenderer.setColor(0f, 1f * fade, 0.698f * fade, 1f);
+    shapeRenderer.rect(rx + 2f, ry + 2f, CELL_SIZE - 4f, CELL_SIZE - 4f);
+}
+// Head: white circle with accent-colored core
+float tx = PLAY_AREA_X + snake.get(0).col * CELL_SIZE;
+float ty = PLAY_AREA_Y + snake.get(0).row * CELL_SIZE;
+float hx = (prevX != null) ? MathUtils.lerp(prevX[0], tx, lerpT) : tx;
+float hy = (prevY != null) ? MathUtils.lerp(prevY[0], ty, lerpT) : ty;
+shapeRenderer.setColor(Color.WHITE);
+shapeRenderer.circle(hx + CELL_SIZE * 0.5f, hy + CELL_SIZE * 0.5f, CELL_SIZE * 0.44f, 14);
+shapeRenderer.setColor(Color.valueOf(Constants.COLOR_PRIMARY));
+shapeRenderer.circle(hx + CELL_SIZE * 0.5f, hy + CELL_SIZE * 0.5f, CELL_SIZE * 0.20f, 10);
+```
+
+---
+
+### Instant direction response — MANDATORY
+
+On every valid direction input (swipe or key), immediately snap the lerp and fire the
+next move tick. Without this the player waits up to `moveInterval` ms before the snake turns.
+
+**In swipe/fling handler — add after setting nextDir:**
+```java
+// Snap lerp and fire move immediately — eliminates input lag
+lerpT = 1f;
+moveTimer = 0f;
+```
+
+**In key handler:**
+```java
+case Input.Keys.UP:    if (dirY != -1) { nextDirX=0;  nextDirY=1;  lerpT=1f; moveTimer=0f; } break;
+case Input.Keys.DOWN:  if (dirY !=  1) { nextDirX=0;  nextDirY=-1; lerpT=1f; moveTimer=0f; } break;
+case Input.Keys.LEFT:  if (dirX !=  1) { nextDirX=-1; nextDirY=0;  lerpT=1f; moveTimer=0f; } break;
+case Input.Keys.RIGHT: if (dirX != -1) { nextDirX=1;  nextDirY=0;  lerpT=1f; moveTimer=0f; } break;
+```
+
+---
+
+### Grid visibility — MANDATORY
+
+Always add a dark overlay before drawing grid dots so the background art does not obscure them:
+
+```java
+// Dark overlay suppresses busy background image
+shapeRenderer.setColor(0f, 0f, 0.04f, 0.72f);
+shapeRenderer.rect(PLAY_AREA_X, PLAY_AREA_Y, PLAY_AREA_W, PLAY_AREA_H);
+
+// Grid dots: bright white, subtle alpha, radius 2
+shapeRenderer.setColor(1f, 1f, 1f, 0.22f);
+for (int c = 0; c < GRID_COLS; c++) {
+    for (int r = 0; r < GRID_ROWS; r++) {
+        float gx = PLAY_AREA_X + c * CELL_SIZE + CELL_SIZE * 0.5f;
+        float gy = PLAY_AREA_Y + r * CELL_SIZE + CELL_SIZE * 0.5f;
+        shapeRenderer.circle(gx, gy, 2f, 6);
+    }
+}
+```
