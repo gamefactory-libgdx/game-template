@@ -566,6 +566,19 @@ them to the obstacle list. Always ask: "Is this meant to kill the player?"
 
 These are hard requirements based on real bugs. Violating them causes broken UX.
 
+### MainMenuScreen MUST display the game title
+- **ALWAYS** render the game title (game name) as a visible Label on MainMenuScreen
+- Use `game.fontTitle` (large font) with the game's title text, centered horizontally
+- Position the title in the upper portion of the screen, above the buttons (Y around 60-75% of screen height)
+- Example:
+```java
+Label.LabelStyle titleStyle = new Label.LabelStyle(game.fontTitle, Color.WHITE);
+Label titleLabel = new Label("GAME TITLE", titleStyle);
+titleLabel.pack();
+titleLabel.setPosition(Constants.WORLD_WIDTH * 0.5f - titleLabel.getPrefWidth() * 0.5f, 630f);
+stage.addActor(titleLabel);
+```
+
 ### Every screen MUST have a "Main Menu" button
 - No screen is a dead end
 - **Every** screen — `GameScreen`, `PauseScreen`, `GameOverScreen`, `LeaderboardScreen`,
