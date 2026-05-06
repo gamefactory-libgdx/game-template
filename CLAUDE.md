@@ -74,6 +74,7 @@ Every game MUST have **between 8 and 10 screens**. Hard requirement.
 - Constructor receives the main `Game` instance
 - Navigate via `game.setScreen(new XxxScreen(game))`
 - Dispose old screen after setting new one
+- **NEVER create a CreditsScreen** — credits screens are forbidden in all games. Do not add it even if GAME_SPEC mentions it.
 
 ---
 
