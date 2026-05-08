@@ -26,10 +26,9 @@ project-root/
 ├── GAME_SPEC.md
 ├── GDD.md
 ├── assets/                          ← all game assets go here
-│   ├── backgrounds/
 │   ├── fonts/                       ← Roboto-Regular.ttf (fallback) + 2 game-specific fonts pre-copied by pipeline
 │   ├── sounds/                      ← music + sfx .ogg files (pre-copied by pipeline)
-│   ├── ui/
+│   ├── ui/                          ← ALL GPT-generated screen backgrounds + button sprites + icons
 │   └── sprites/                     ← curated pixel-art sprite packs (craftpix, pre-copied by pipeline)
 │       └── (subdirs: character/ tileset/ enemy/ vehicle/ object/ ui/)
 ├── core/
@@ -133,8 +132,7 @@ The exact subdirectories present depend on the game archetype. Always check the 
 | `sprites/vehicle/` | Ships, cars, planes | `ls assets/sprites/vehicle/` |
 | `sprites/object/` | Collectibles, projectiles, props | `ls assets/sprites/object/` |
 | `sprites/ui/` | UI elements, icons (always present) | `ls assets/sprites/ui/` |
-| `backgrounds/menu/` | Menu background images | `ls assets/backgrounds/menu/` |
-| `backgrounds/game/` | Gameplay background images | `ls assets/backgrounds/game/` |
+| `ui/` | GPT-generated screen backgrounds (all screens) | `cat IMAGES_MANIFEST.json` |
 
 **Never hardcode a sprite filename.** Always `ls` the directory first, then use the filenames you find.
 
@@ -714,10 +712,11 @@ All game coordinates use world units (480x854), never raw pixel values.
 ## 10. Location / World Variants
 
 If the game has multiple environments:
-- Each gets its own `GameScreen` subclass
-- Each has a unique background asset
+- Each gets its own `GameScreen` subclass or mode flag
+- Each has a unique background: check `IMAGES_MANIFEST.json` for `ui/level_select_world_N.png` or `ui/world_N_bg.png` — the pipeline generates per-world images when the brief includes them
 - Each has at least one unique obstacle/hazard type
 - Share base logic via a parent class (e.g. `BaseGameScreen extends ScreenAdapter`)
+- In Constants.java define `UI_WORLD_1_BG`, `UI_WORLD_2_BG`, etc. pointing to the generated paths
 
 ---
 
@@ -915,48 +914,21 @@ game.manager.get(LANE_SOUNDS[lane], Sound.class).play(1.0f);
 
 ```java
 // CORRECT
-manager.load("backgrounds/bg_desert.png", Texture.class);
+manager.load("ui/menu_screen.png", Texture.class);
 manager.finishLoading();
-Texture bg = manager.get("backgrounds/bg_desert.png", Texture.class);
+Texture bg = manager.get("ui/menu_screen.png", Texture.class);
 
 // WRONG — never do this
-Texture bg = new Texture("backgrounds/bg_desert.png");
+Texture bg = new Texture("ui/menu_screen.png");
 ```
 
 - All filenames exactly as in GAME_SPEC
 - If AssetManager owns it, use `manager.unload()` not `texture.dispose()`
 
-### ⚠️ MANDATORY: Every screen must render a background image
+### ⚠️ MANDATORY: All screen backgrounds come from `assets/ui/` — never from `assets/backgrounds/`
 
-Every screen (menu, gameplay, game over, pause, etc.) **MUST** load and draw a background image.
-**Never** leave a screen with only `glClearColor` — that produces an ugly solid-colour screen.
-
-```java
-// In constructor — pick the first file from ls assets/backgrounds/menu/ or backgrounds/game/
-private static final String BG = "backgrounds/menu/YOUR_BG_FILE.png"; // exact filename from ls
-
-// Load in constructor (after manager is ready):
-if (!game.manager.isLoaded(BG)) {
-    game.manager.load(BG, Texture.class);
-    game.manager.finishLoading();
-}
-
-// At the TOP of render(), before anything else:
-game.batch.begin();
-game.batch.draw(game.manager.get(BG, Texture.class),
-        0, 0, Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT);
-game.batch.end();
-
-// Then draw UI / game elements on top
-```
-
-Rules:
-- Menu screens → use a file from `assets/backgrounds/menu/`
-- Game screens → use a file from `assets/backgrounds/game/`
-- Game over / pause screens → reuse the menu background or game background
-- Always `ls` the directory first — never invent filenames
-- Stretch the image to fill the full world (0, 0, WORLD_WIDTH, WORLD_HEIGHT)
-- The `glClearColor` call can remain but set it to black `(0,0,0,1)` as a safe fallback
+The `assets/backgrounds/` directory does **not exist**. Every background image is GPT-generated
+and lives in `assets/ui/`. Read `IMAGES_MANIFEST.json` to see exactly which files were generated.
 
 ### ⚠️ MANDATORY: Use generated UI screen images as backgrounds
 
@@ -974,10 +946,40 @@ exact panel positions — use these instead of estimating from FIGMA_BRIEF.
 The AI generates rich atmospheric art with decorative empty panel frames.
 ALL buttons, labels, titles, and text are drawn by LibGDX code on top.
 
-**Mapping rule** — match filename to screen class:
-- `ui/main_menu.png` → `MainMenuScreen`
-- `ui/kitchen_select.png` → `KitchenSelectScreen`
-- `ui/game_over.png` → `GameOverScreen`
+**Step 1 — Read IMAGES_MANIFEST.json and define Constants for every generated image:**
+
+```java
+// Constants.java — define one constant per generated ui/ image
+// (check IMAGES_MANIFEST.json for exact filenames — these are examples)
+public static final String UI_MENU_SCREEN      = "ui/menu_screen.png";
+public static final String UI_GAME_SCREEN      = "ui/game_screen.png";
+public static final String UI_GAME_OVER_SCREEN = "ui/game_over_screen.png";
+public static final String UI_PAUSE_SCREEN     = "ui/pause_screen.png";
+public static final String UI_VICTORY_SCREEN   = "ui/victory_screen.png";   // if generated
+// World-specific backgrounds (if generated):
+public static final String UI_WORLD_1_BG       = "ui/level_select_world_1.png";
+public static final String UI_WORLD_2_BG       = "ui/level_select_world_2.png";
+public static final String UI_WORLD_3_BG       = "ui/level_select_world_3.png";
+```
+
+**Step 2 — Load ALL ui/ images in SplashScreen (do not lazy-load per screen):**
+
+```java
+// SplashScreen — load every constant defined in Constants
+manager.load(Constants.UI_MENU_SCREEN,      Texture.class);
+manager.load(Constants.UI_GAME_SCREEN,      Texture.class);
+manager.load(Constants.UI_GAME_OVER_SCREEN, Texture.class);
+manager.load(Constants.UI_PAUSE_SCREEN,     Texture.class);
+// Add any additional generated images (victory, world bgs, etc.)
+```
+
+**Step 3 — Map constant to screen class:**
+- `UI_MENU_SCREEN` → `MainMenuScreen`
+- `UI_GAME_SCREEN` → `GameScreen` (gameplay background)
+- `UI_GAME_OVER_SCREEN` → `GameOverScreen`
+- `UI_PAUSE_SCREEN` → `PauseScreen`
+- `UI_VICTORY_SCREEN` → `VictoryScreen` / level complete screen
+- `UI_WORLD_1_BG` → level select when world == 1, etc.
 
 **When a generated image exists for a screen:**
 
@@ -1071,7 +1073,7 @@ float descH   = headerY - descY - 6f;           // remaining height for descript
 **If ui_positions.json is missing** or has no entry for this screen, fall back to FIGMA_BRIEF coordinates.
 
 **If the generated image is missing** (in `failed` list or absent from `generated`),
-fall back to a background from `assets/backgrounds/menu/` or `assets/backgrounds/game/`.
+fall back to a solid black glClearColor background (the `assets/backgrounds/` directory no longer exists — all generated images are in `assets/ui/`).
 
 **NEVER** skip the background image and draw a solid colour screen when a PNG exists.
 **NEVER** draw button text as static BitmapFont.draw() calls — use Stage Label/TextButton actors.
@@ -1164,7 +1166,7 @@ If no reference games provided — build clean, minimal implementation matching 
 - [ ] No `System.out.println` — use `Gdx.app.log`
 - [ ] `dispose()` on every screen
 - [ ] Background music plays on every screen (menu, gameplay, game over)
-- [ ] Every screen draws a background image (backgrounds/menu/ or backgrounds/game/) — never solid glClearColor only
+- [ ] Every screen draws a background image from `assets/ui/` (via IMAGES_MANIFEST.json) — never solid glClearColor only
 - [ ] Rhythm/music games use sfx_jingle_hit/pizz/8bit note sounds per lane — not generic sfx_hit.ogg
 - [ ] GameScreen uses `sounds/music/music_gameplay.ogg` (always — the pipeline selects the right track for this archetype)
 - [ ] GameOverScreen uses `playMusicOnce()` — game over music plays once and stops, never loops
