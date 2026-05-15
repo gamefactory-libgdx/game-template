@@ -516,6 +516,48 @@ For **space** games — 2 ship skins:
 | Blue Ship (default) | free | `player_ship.png` |
 | Green Ship | 100 coins | `player_ship_alt.png` |
 
+### ShopScreen skin cards — display rules
+
+Each skin card in `ShopScreen` MUST show:
+1. **A sprite image** of the skin — centered in the card, sized ~60×60px, `setTouchable(Touchable.disabled)`
+2. **Status text only** in the `TextButton` (EQUIPPED / TAP TO EQUIP / BUY 100c / 100 coins) — **NOT** the skin name
+3. **Skin name as a separate `Label`** positioned just below the card (outside the button bounds)
+
+```java
+// Correct card layout:
+TextButton skinBtn = UiFactory.makeButton(statusText, smallBtnStyle, cardW, cardH);  // status only
+stage.addActor(skinBtn);
+
+Image skinImg = new Image(skinTex);
+skinImg.setSize(60f, 60f);
+skinImg.setPosition(cx + (cardW - 60f) / 2f, cy + cardH - 68f);  // top of card
+skinImg.setTouchable(Touchable.disabled);
+stage.addActor(skinImg);
+
+Label nameLabel = new Label(Constants.SKIN_NAMES[i], nameStyle);
+nameLabel.pack();
+nameLabel.setPosition(cx + (cardW - nameLabel.getPrefWidth()) / 2f, cy - 22f);  // below card
+stage.addActor(nameLabel);
+```
+
+**NEVER** put the skin name inside the button text — it overlaps with the sprite image.
+
+### ShopScreen background — NO dark overlays
+
+**NEVER** add a semi-transparent black rectangle (`ShapeRenderer` or `Pixmap`) as a card background or content panel overlay in `ShopScreen`.
+The shop background image (`UI_SHOP_SCREEN`) already provides contrast. Adding a dark overlay on top makes the UI look broken and unpolished.
+
+```java
+// WRONG — do NOT do this:
+shapeRenderer.setColor(0f, 0f, 0f, 0.5f);
+shapeRenderer.rect(30f, 150f, 420f, 600f);  // dark overlay — FORBIDDEN in ShopScreen
+
+// CORRECT — just draw the background image and place actors directly:
+game.batch.draw(game.manager.get(Constants.UI_SHOP_SCREEN, Texture.class),
+        0, 0, Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT);
+// Then add stage actors directly — no overlay needed
+```
+
 ### Implementing skins — SharedPreferences pattern
 
 ```java
