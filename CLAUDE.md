@@ -1411,3 +1411,40 @@ for (int c = 0; c < GRID_COLS; c++) {
     }
 }
 ```
+
+## 22. HowToPlay / Tutorial Text — MANDATORY Label Rules
+
+### NEVER combine setWrap(true) + pack() on the same Label
+
+Calling `setWrap(true)` then `pack()` collapses the label width to 0 because
+`getPrefWidth()` returns 0 for wrapped labels. This causes text to render
+**letter-by-letter in a vertical column**, which looks broken.
+
+**Wrong (causes letter-by-letter rendering):**
+```java
+Label line = new Label(text, style);
+line.setWrap(true);
+line.setWidth(wrapWidth);
+line.pack();  // ← BUG: collapses width to 0 for wrapped labels
+line.setPosition(x, y);
+```
+
+**Correct option A — no wrap needed (pre-broken short lines):**
+```java
+Label line = new Label(text, style);
+line.pack();  // width computed from actual text, no wrap
+line.setPosition(x, y);
+```
+
+**Correct option B — wrap needed (long paragraphs):**
+```java
+Label line = new Label(text, style);
+line.setWrap(true);
+line.setSize(wrapWidth, 200f);  // set explicit size, never call pack()
+line.setPosition(x, y);
+```
+
+### HowToPlay screen best practices
+- For short tutorial lines (< 40 chars each): use pre-broken string array, no wrap, just `pack()`
+- For long paragraphs: use `setSize(w, h)` never `pack()` on wrapped labels
+- Back button: place at **center bottom** `((WORLD_WIDTH-btnW)/2f, 20f)`, not top-left
