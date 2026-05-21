@@ -739,7 +739,22 @@ Gdx.input.setInputProcessor(stage);
 public void resize(int width, int height) {
     viewport.update(width, height, true);
 }
+
+// show() — MUST also call viewport.update to re-center camera.
+// In LibGDX, resize() only fires when the window physically resizes.
+// When game.setScreen(newScreen) is called mid-game, show() fires but resize() does NOT.
+// Without this, the camera stays at position (0,0) instead of (WORLD_WIDTH/2, WORLD_HEIGHT/2),
+// causing ALL stage elements and backgrounds to appear shifted (left/down).
+@Override
+public void show() {
+    viewport.update(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
+    // ... rest of show() — input setup, music, etc.
+}
 ```
+
+> **#1 cause of shifted UI on non-first screens.** The first screen shown from
+> `MainGame.create()` is fine because LibGDX calls `resize()` before the first render.
+> Every subsequent screen opened via `game.setScreen()` MUST have this in `show()`.
 
 Define in `Constants.java`:
 ```java
