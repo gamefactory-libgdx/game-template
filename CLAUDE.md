@@ -749,6 +749,30 @@ public static final float WORLD_HEIGHT = 854f;  // 16:9 portrait
 
 All game coordinates use world units (480x854), never raw pixel values.
 
+### ⚠️ LANDSCAPE ORIENTATION — WORLD DIMENSIONS MUST BE SWAPPED
+
+If the game has `orientation: landscape` (top-down racer, boat racer, etc.), you MUST
+swap WORLD_WIDTH and WORLD_HEIGHT in `Constants.java`:
+```java
+public static final float WORLD_WIDTH  = 854f;  // landscape: wide axis
+public static final float WORLD_HEIGHT = 480f;  // landscape: short axis
+```
+
+**Why this matters:** The FIGMA_BRIEF for landscape games uses 854×480 coordinates.
+If you keep 480×854, every X position from the brief maps to ~44% too far left.
+A button the brief calls "centered at x=427" would appear at x=427 in a 480-wide
+world (89% from left — far right!), instead of the intended screen center.
+
+Rules for landscape code:
+- `WORLD_WIDTH = 854f`, `WORLD_HEIGHT = 480f`
+- Center X: `WORLD_WIDTH / 2f = 427f`
+- Center Y: `WORLD_HEIGHT / 2f = 240f`
+- FIGMA_BRIEF Y conversion: `libgdxY = WORLD_HEIGHT - figmaTopY - elementHeight`
+  (same formula, but WORLD_HEIGHT is now 480 not 854)
+- StretchViewport renders 854×480 world onto the landscape physical screen — ✓
+- Never use `screenOrientation="landscape"` as a workaround to rotate a portrait
+  480×854 world — that produces distorted squashed visuals. Always set correct dims.
+
 ---
 
 ## 10. Location / World Variants
@@ -987,6 +1011,12 @@ exact panel positions — use these instead of estimating from FIGMA_BRIEF.
 **IMPORTANT: Images are BACKGROUNDS ONLY — no buttons or text are baked into them.**
 The AI generates rich atmospheric art with decorative empty panel frames.
 ALL buttons, labels, titles, and text are drawn by LibGDX code on top.
+
+**⚠️ If a background image contains rendered text (e.g. the AI wrote the word "PAUSE"
+or "SCORE" or "MENU" into the image pixels):** Do NOT add a duplicate Label on top.
+Just use the background image as-is and draw your title Label in code normally;
+the baked word will be hidden behind or blended with your Label. Never crash or skip
+loading because of unexpected text in a background PNG — images are what they are.
 
 **Step 1 — Read IMAGES_MANIFEST.json and define Constants for every generated image:**
 
