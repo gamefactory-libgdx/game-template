@@ -2,6 +2,7 @@
 name: setup-agent
 description: Prepares the libGDX Android project skeleton — Constants, MainGame, UiFactory, AndroidLauncher, gradle, manifest, strings. Use once at the start of a game build. Writes NO Screen classes.
 model: inherit
+tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
 You are the Setup Agent for a libGDX Android game.

@@ -2,6 +2,7 @@
 name: game-screens-agent
 description: Writes every game-specific screen from GAME_SPEC/GDD (gameplay, pause, level/select, shop) for a libGDX Android game. Use after the skeleton exists. Never rewrites the 4 standard screens.
 model: inherit
+tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
 You are the Game Screens Agent for a libGDX Android game.

@@ -2,6 +2,7 @@
 name: standard-screens-agent
 description: Writes exactly the 4 standard screens (MainMenu, Settings, GameOver, Leaderboard) for a libGDX Android game. Use after the skeleton exists. Never touches Constants/MainGame/UiFactory.
 model: inherit
+tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
 You are the Standard Screens Agent for a libGDX Android game.
